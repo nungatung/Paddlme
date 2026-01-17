@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "156251242970",
+    "project_id": "paddlme-be470",
+    "storage_bucket": "paddlme-be470.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:156251242970:android:b70cb7548258d6a48900e3",
+        "android_client_info": {
+          "package_name": "com.example.wave_share"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "156251242970-56cvb3vlnqbuo29ntd7g0pkb3op5sd1c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9P87OSKCpqIkSLhfeLt7s5rcB4uzVMtk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "156251242970-56cvb3vlnqbuo29ntd7g0pkb3op5sd1c.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "156251242970-k2ol7gur2oo7kbkvlhmvk22m9d561d5h.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.wave_share"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

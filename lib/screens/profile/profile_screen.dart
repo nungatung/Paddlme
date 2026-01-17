@@ -1,0 +1,703 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/constants/mock_data.dart';
+import '../../widgets/booking_card.dart';
+import '../../widgets/equipment_card.dart';
+import '../../models/user_model.dart';
+import '../../models/equipment_model.dart';  // ✅ Add this
+import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
+import '../../services/equipment_service.dart';  // ✅ Add this
+import '../equipment/equipment_detail_screen.dart';
+import '../list_equipment/list_equipment_screen.dart';  // ✅ Add this
+import '../auth/login_screen.dart';
+import 'edit_profile_screen.dart';
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _authService = AuthService();
+  final _userService = UserService();
+  final _equipmentService = EquipmentService();  // ✅ Add this
+  
+  UserModel? _currentUser;
+  List<EquipmentModel> _userListings = [];  // ✅ Changed from mock data
+  bool _isLoading = true;
+  bool _isLoadingListings = true;  // ✅ Add this
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadUserData();
+    _loadUserListings();  // ✅ Add this
+  }
+
+  Future<void> _loadUserData() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      final userData = await _userService.getUserByUid(user.uid);
+      if (mounted) {
+        setState(() {
+          _currentUser = userData;
+          _isLoading = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  // ✅ NEW: Load user's equipment listings from Firestore
+  Future<void> _loadUserListings() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      try {
+        final listings = await _equipmentService.getEquipmentByOwner(user.uid);
+        if (mounted) {
+          setState(() {
+            _userListings = listings;
+            _isLoadingListings = false;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error loading listings: $e');
+        if (mounted) {
+          setState(() => _isLoadingListings = false);
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() => _isLoadingListings = false);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController. dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_currentUser == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment. center,
+            children: [
+              const Text('Not logged in'),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                child: const Text('Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final bookings = MockData.getMockBookings();
+    final upcomingBookings = bookings.where((b) => b.isUpcoming || b.isActive).toList();
+    final pastBookings = bookings.where((b) => b.isPast).toList();
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            // Profile Header
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Avatar with Edit Button
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey[200],
+                          backgroundImage: _currentUser!.profileImageUrl != null
+                              ? NetworkImage(_currentUser!.profileImageUrl!)
+                              : null,
+                          child: _currentUser!.profileImageUrl == null
+                              ? Icon(Icons.person, size: 50, color: Colors.grey[400])
+                              : null,
+                        ),
+                        Positioned(
+                          bottom:  0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:  (_) => EditProfileScreen(user: _currentUser!),
+                                ),
+                              );
+                              
+                              if (result == true) {
+                                _loadUserData();
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                size: 16,
+                                color: Colors. white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Name
+                    Text(
+                      _currentUser!.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Email
+                    Text(
+                      _currentUser!.email,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+
+                    // Location (if set)
+                    if (_currentUser!.location != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment:  MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            _currentUser!.location! ,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    const SizedBox(height: 12),
+
+                    // Rating
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical:  8),
+                      decoration:  BoxDecoration(
+                        color: AppColors.accent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, size: 18, color: AppColors.accent),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${_currentUser!.displayRating} ${_currentUser!.reviewText}',
+                            style: const TextStyle(
+                              fontSize:  14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Bio (if set)
+                    if (_currentUser!.bio != null && _currentUser!.bio!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _currentUser! .bio!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Quick Stats
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            Icons.calendar_today,
+                            upcomingBookings.length.toString(),
+                            'Upcoming',
+                            AppColors.primary.withOpacity(0.1),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildStatCard(
+                            Icons.inventory_2_outlined,
+                            _userListings.length.toString(),  // ✅ Use real count
+                            'Listings',
+                            AppColors.accent.withOpacity(0.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+            // My Bookings Section (keep mock data for now)
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'My Bookings',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed:  () {
+                            // TODO: Navigate to all bookings
+                          },
+                          child:  const Text('View All'),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Tabs
+                    TabBar(
+                      controller: _tabController,
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor: Colors.grey[600],
+                      indicatorColor: AppColors.primary,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                      tabs: [
+                        Tab(text: 'Upcoming (${upcomingBookings.length})'),
+                        Tab(text:  'Past (${pastBookings.length})'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Bookings List
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets. symmetric(horizontal: 20),
+                constraints: const BoxConstraints(
+                  minHeight: 200,
+                  maxHeight: 500,
+                ),
+                child:  TabBarView(
+                  controller:  _tabController,
+                  children: [
+                    // Upcoming Bookings
+                    upcomingBookings.isEmpty
+                        ? _buildEmptyState(
+                            Icons.calendar_today,
+                            'No Upcoming Bookings',
+                            'Your upcoming rentals will appear here',
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            shrinkWrap: true,
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: upcomingBookings.length,
+                            itemBuilder: (context, index) {
+                              return BookingCard(booking: upcomingBookings[index]);
+                            },
+                          ),
+
+                    // Past Bookings
+                    pastBookings. isEmpty
+                        ? _buildEmptyState(
+                            Icons. history,
+                            'No Past Bookings',
+                            'Your rental history will appear here',
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            shrinkWrap: true,
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: pastBookings.length,
+                            itemBuilder: (context, index) {
+                              return BookingCard(booking: pastBookings[index]);
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+            // ✅ MY LISTINGS SECTION - UPDATED TO USE REAL DATA
+            SliverToBoxAdapter(
+              child:  Container(
+                color: Colors. white,
+                padding: const EdgeInsets.fromLTRB(20, 20, 0, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'My Listings',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton. icon(
+                            onPressed: () async {
+                              // ✅ Navigate to List Equipment screen
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ListEquipmentScreen(),
+                                ),
+                              );
+                              
+                              // Refresh listings if equipment was added
+                              if (result == true) {
+                                _loadUserListings();
+                              }
+                            },
+                            icon:  const Icon(Icons.add),
+                            label: const Text('Add'),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ✅ Show loading, empty state, or listings
+                    _isLoadingListings
+                        ? const Padding(
+                            padding: EdgeInsets.all(40),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        : _userListings.isEmpty
+                            ?  Padding(
+                                padding: const EdgeInsets.only(right: 20),
+                                child: _buildEmptyState(
+                                  Icons.inventory_2_outlined,
+                                  'No Listings Yet',
+                                  'List your equipment to start earning',
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment:  CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    height: 250,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: const BouncingScrollPhysics(),
+                                      padding: const EdgeInsets.only(right: 20),
+                                      itemCount: _userListings.length,
+                                      itemBuilder: (context, index) {
+                                        return Container(
+                                          width: 180,
+                                          margin: const EdgeInsets.only(right: 12),
+                                          child: EquipmentCard(
+                                            equipment: _userListings[index],
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:  (_) => EquipmentDetailScreen(
+                                                    equipment: _userListings[index],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  
+                                  if (_userListings.length > 1)
+                                    Padding(
+                                      padding:  const EdgeInsets.only(top: 12, right: 20),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment. center,
+                                        children: [
+                                          Icon(Icons. swipe, size: 16, color: Colors.grey[400]),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Swipe to see more',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[500],
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+            // Settings Section (unchanged)
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    _buildSettingItem(
+                      Icons.person_outline,
+                      'Account Settings',
+                      () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditProfileScreen(user: _currentUser!),
+                          ),
+                        );
+                        
+                        if (result == true) {
+                          _loadUserData();
+                        }
+                      },
+                    ),
+                    _buildSettingItem(
+                      Icons.notifications_outlined,
+                      'Notifications',
+                      () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Notifications coming soon!')),
+                        );
+                      },
+                    ),
+                    _buildSettingItem(
+                      Icons.payment_outlined,
+                      'Payment Methods',
+                      () {
+                        ScaffoldMessenger. of(context).showSnackBar(
+                          const SnackBar(content: Text('Payment Methods coming soon!')),
+                        );
+                      },
+                    ),
+                    _buildSettingItem(
+                      Icons.help_outline,
+                      'Help & Support',
+                      () {
+                        ScaffoldMessenger. of(context).showSnackBar(
+                          const SnackBar(content: Text('Help & Support coming soon!')),
+                        );
+                      },
+                    ),
+                    _buildSettingItem(
+                      Icons.description_outlined,
+                      'Terms & Privacy',
+                      () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Terms & Privacy coming soon!')),
+                        );
+                      },
+                    ),
+                    _buildSettingItem(
+                      Icons.logout,
+                      'Logout',
+                      () => _showLogoutDialog(context),
+                      isDestructive: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(IconData icon, String value, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(),
+        borderRadius: BorderRadius. circular(16),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize:  24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height:  4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(IconData icon, String title, String subtitle) {
+    return Center(
+      child:  Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size:  64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize:  18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height:  8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingItem(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isDestructive ? AppColors.error : Colors.grey[700],
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          color: isDestructive ? AppColors.error : Colors.black87,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color:  Colors.grey[400],
+      ),
+      onTap: onTap,
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title:  const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await _authService.signOut();
+              if (context.mounted) {
+                Navigator. of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+}

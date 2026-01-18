@@ -21,8 +21,8 @@ class LocationService {
       print('📡 Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response. body);
-        final features = data['features'] as List<dynamic>?  ?? [];
+        final data = json.decode(response.body);
+        final features = data['features'] as List<dynamic>? ?? [];
 
         print('✅ Found ${features.length} locations');
 
@@ -33,15 +33,19 @@ class LocationService {
         // ✅ Return as Map<String, dynamic> for dropdown
         return features.map((feature) {
           final placeTypes = feature['place_type'] as List<dynamic>? ?? [];
-          final placeType = placeTypes.isNotEmpty ? placeTypes.first.toString() : '';
-          
+          final placeType =
+              placeTypes.isNotEmpty ? placeTypes.first.toString() : '';
+
           return {
             'name': feature['text'] ?? '',
-            'display_name': (feature['place_name'] ??  '').replaceAll(', New Zealand', ''),
+            'display_name':
+                (feature['place_name'] ?? '').replaceAll(', New Zealand', ''),
             'full_name': feature['place_name'] ?? '',
             'place_type': placeType,
-            'latitude': (feature['geometry']['coordinates'][1] as num).toDouble(),
-            'longitude': (feature['geometry']['coordinates'][0] as num).toDouble(),
+            'latitude':
+                (feature['geometry']['coordinates'][1] as num).toDouble(),
+            'longitude':
+                (feature['geometry']['coordinates'][0] as num).toDouble(),
             'type_icon': _getTypeIcon(placeType),
           };
         }).toList();
@@ -59,11 +63,11 @@ class LocationService {
   // ✅ NEW: Helper method for type icons
   static String _getTypeIcon(String placeType) {
     switch (placeType) {
-      case 'place': 
+      case 'place':
         return '🏙️';
-      case 'region': 
+      case 'region':
         return '🗺️';
-      case 'locality': 
+      case 'locality':
         return '📍';
       case 'neighbourhood':
         return '🏘️';
@@ -73,7 +77,8 @@ class LocationService {
   }
 
   // ✅ UPDATED: Also make this static (optional, for consistency)
-  static Future<String? > getLocationFromCoordinates(double latitude, double longitude) async {
+  static Future<String?> getLocationFromCoordinates(
+      double latitude, double longitude) async {
     try {
       final url = Uri.parse(
         '$_baseUrl/$longitude,$latitude. json?key=$_apiKey',
@@ -83,8 +88,8 @@ class LocationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final features = data['features'] as List<dynamic>?  ?? [];
-        
+        final features = data['features'] as List<dynamic>? ?? [];
+
         if (features.isNotEmpty) {
           return features.first['place_name'];
         }
@@ -97,7 +102,8 @@ class LocationService {
   }
 
   // ✅ KEEP: Original method for LocationPicker widget (if still using it)
-  Future<List<LocationResult>> searchLocationDetailed(String query) async {
+  static Future<List<LocationResult>> searchLocationDetailed(
+      String query) async {
     if (query.isEmpty || query.length < 2) return [];
 
     try {
@@ -113,7 +119,7 @@ class LocationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final features = data['features'] as List<dynamic>?  ?? [];
+        final features = data['features'] as List<dynamic>? ?? [];
 
         print('✅ Found ${features.length} locations');
 
@@ -123,21 +129,24 @@ class LocationService {
 
         return features.map((feature) {
           final placeTypes = feature['place_type'] as List<dynamic>? ?? [];
-          final placeType = placeTypes.isNotEmpty ? placeTypes.first.toString() : '';
+          final placeType =
+              placeTypes.isNotEmpty ? placeTypes.first.toString() : '';
 
           return LocationResult(
-            placeName: feature['place_name'] ??  '',
+            placeName: feature['place_name'] ?? '',
             text: feature['text'] ?? '',
             placeType: placeType,
             coordinates: Coordinates(
-              latitude:  (feature['geometry']['coordinates'][1] as num).toDouble(),
-              longitude: (feature['geometry']['coordinates'][0] as num).toDouble(),
+              latitude:
+                  (feature['geometry']['coordinates'][1] as num).toDouble(),
+              longitude:
+                  (feature['geometry']['coordinates'][0] as num).toDouble(),
             ),
           );
         }).toList();
       } else {
         final errorBody = response.body;
-        print('❌ Error ${response. statusCode}: $errorBody');
+        print('❌ Error ${response.statusCode}: $errorBody');
         throw Exception('Failed to search location: ${response.statusCode}');
       }
     } catch (e) {
@@ -154,10 +163,10 @@ class LocationResult {
   final Coordinates coordinates;
 
   LocationResult({
-    required this. placeName,
-    required this. text,
+    required this.placeName,
+    required this.text,
     required this.placeType,
-    required this. coordinates,
+    required this.coordinates,
   });
 
   // Get formatted display name
@@ -175,7 +184,7 @@ class LocationResult {
         return '🗺️';
       case 'locality':
         return '📍';
-      case 'neighbourhood': 
+      case 'neighbourhood':
         return '🏘️';
       default:
         return '📍';
@@ -195,7 +204,7 @@ class Coordinates {
   Map<String, dynamic> toMap() {
     return {
       'latitude': latitude,
-      'longitude':  longitude,
+      'longitude': longitude,
     };
   }
 

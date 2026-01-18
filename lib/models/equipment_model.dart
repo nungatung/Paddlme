@@ -83,6 +83,11 @@ class EquipmentModel {
   final double? deliveryRadius; // in kilometers
   final bool requiresPickup; // if true, renter must pick up the equipment
 
+  final String? ownerBio;
+  final int ownerListingsCount;
+  final double ownerRating;
+  final int ownerReviewCount;
+
   EquipmentModel({
     required this.id,
     required this.ownerId,
@@ -112,6 +117,11 @@ class EquipmentModel {
     this.deliveryFee,
     this.deliveryRadius,
     this.requiresPickup = true, 
+    this.ownerBio,
+    this.ownerListingsCount = 0,
+    this.ownerRating = 0.0,
+    this.ownerReviewCount = 0,
+
   });
 
   // Convert to Map for Firestore
@@ -145,6 +155,10 @@ class EquipmentModel {
       'deliveryFee': deliveryFee,
       'deliveryRadius': deliveryRadius,
       'requiresPickup': requiresPickup,
+      'ownerBio': ownerBio,
+      'ownerListingsCount': ownerListingsCount,
+      'ownerRating': ownerRating,
+      'ownerReviewCount': ownerReviewCount,
     };
   }
 
@@ -179,6 +193,10 @@ class EquipmentModel {
       deliveryFee: map['deliveryFee']?.toDouble(),
       deliveryRadius: map['deliveryRadius']?.toDouble(),
       requiresPickup: map['requiresPickup'] ?? true,
+      ownerBio: map['ownerBio'],
+      ownerListingsCount: map['ownerListingsCount'] ?? 0,
+      ownerRating: (map['ownerRating'] ?? 0).toDouble(),
+      ownerReviewCount: map['ownerReviewCount'] ?? 0,
     );
   }
 
@@ -218,6 +236,10 @@ class EquipmentModel {
     double? deliveryFee,
     double? deliveryRadius,
     bool? requiresPickup,
+    String? ownerBio,
+    int? ownerListingsCount,
+    double? ownerRating,
+    int? ownerReviewCount,
   }) {
     return EquipmentModel(
       id: id ?? this.id,
@@ -248,6 +270,10 @@ class EquipmentModel {
       deliveryFee: deliveryFee ?? this.deliveryFee,
       deliveryRadius: deliveryRadius ?? this.deliveryRadius,
       requiresPickup: requiresPickup ?? this.requiresPickup,
+      ownerBio: ownerBio ?? this.ownerBio,
+      ownerListingsCount: ownerListingsCount ?? this.ownerListingsCount,
+      ownerRating: ownerRating ?? this.ownerRating,
+      ownerReviewCount: ownerReviewCount ?? this.ownerReviewCount,
     );
   }
 

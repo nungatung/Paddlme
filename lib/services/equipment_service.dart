@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:wave_share/models/equipment_model.dart';
 
 class EquipmentService {
@@ -18,6 +19,24 @@ class EquipmentService {
       return docRef. id;
     } catch (e) {
       throw Exception('Failed to create equipment: $e');
+    }
+  }
+
+  // ✅ Get all equipment by a specific owner
+  Future<List<EquipmentModel>> getEquipmentByOwner(String ownerId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('equipment')
+          .where('ownerId', isEqualTo: ownerId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => EquipmentModel.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      debugPrint('Error getting owner equipment: $e');
+      return [];
     }
   }
 
@@ -50,21 +69,6 @@ class EquipmentService {
     }
   }
 
-  // Get equipment by owner
-  Future<List<EquipmentModel>> getEquipmentByOwner(String ownerId) async {
-    try {
-      final querySnapshot = await _equipmentCollection
-          .where('ownerId', isEqualTo: ownerId)
-          .orderBy('createdAt', descending:  true)
-          .get();
-
-      return querySnapshot.docs
-          .map((doc) => EquipmentModel.fromFirestore(doc))
-          .toList();
-    } catch (e) {
-      throw Exception('Failed to get owner equipment: $e');
-    }
-  }
 
   // Get equipment by category
   Future<List<EquipmentModel>> getEquipmentByCategory(EquipmentCategory category) async {

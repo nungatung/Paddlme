@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 import '../../models/equipment_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/image_carousel.dart';
 import '../../widgets/review_card.dart';
-import '../../widgets/equipment_card.dart';
+
 import '../booking/date_selection_screen.dart';
 import '../../services/auth_service.dart';
 import '../equipment/edit_equipment_screen.dart';
 import '../../services/favourites_service.dart';
+import '../../widgets/owner_profile_bottom_sheet.dart';
+import '../../services/equipment_service.dart';
 
 class EquipmentDetailScreen extends StatefulWidget {
   final EquipmentModel equipment;
 
   const EquipmentDetailScreen({
     super.key,
-    required this. equipment,
+    required this.equipment,
   });
 
   @override
@@ -27,44 +29,93 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
   bool _isLoadingFavorite = true;
   final _authService = AuthService();
   final _favoritesService = FavoritesService();
+  final _equipmentService = EquipmentService();
+
+  // New
+  final ScrollController _scrollController = ScrollController();
+  bool _showBottomBar = true;
+  double _lastScrollPosition = 0;
 
   // Mock reviews
   List<Review> _getReviews() {
     return [
       Review(
         userName: 'Mike Chen',
-        userAvatarUrl: 'https://i.pravatar.cc/150?  img=12',
+        userAvatarUrl: 'https://i.pravatar.cc/150? img=12',
         rating: 5.0,
-        comment: 'Awesome kayak! Very stable and comfortable. Sarah was super helpful with instructions. Highly recommend!',
-        date: DateTime.  now().subtract(const Duration(days: 14)),
+        comment:
+            'Awesome kayak!  Very stable and comfortable.  Sarah was super helpful with instructions.  Highly recommend!',
+        date: DateTime.now().subtract(const Duration(days: 14)),
       ),
       Review(
         userName: 'Emma Wilson',
-        userAvatarUrl: 'https://i.pravatar.cc/150? img=5',
+        userAvatarUrl: 'https://i.pravatar.cc/150?img=5',
         rating: 5.0,
-        comment: 'Perfect for beginners. Had a great time exploring the bay. Equipment was in excellent condition.',
-        date: DateTime. now().subtract(const Duration(days: 21)),
+        comment:
+            'Perfect for beginners.  Had a great time exploring the bay. Equipment was in excellent condition.',
+        date: DateTime.now().subtract(const Duration(days: 21)),
       ),
       Review(
         userName: 'Jake Roberts',
         userAvatarUrl: 'https://i.pravatar.cc/150?img=8',
         rating: 4.5,
-        comment: 'Great experience overall. The kayak was exactly as described. Would rent again!',
-        date: DateTime. now().subtract(const Duration(days: 35)),
+        comment:
+            'Great experience overall. The kayak was exactly as described. Would rent again!',
+        date: DateTime.now().subtract(const Duration(days: 35)),
       ),
     ];
   }
 
+  // ✅ ADD:  Mock owner listings
+  List<EquipmentModel> _getOwnerListings() {
+    // Filter all equipment by this owner
+    // For now, return mock data
+    return [
+      // You'll replace this with actual Firestore query
+    ];
+  }
+
+  // ✅ ADD: Mock owner reviews
+  List<OwnerReview> _getOwnerReviews() {
+    return [
+      OwnerReview(
+        userName: 'Jessica Lee',
+        userAvatarUrl: 'https://i.pravatar.cc/150? img=1',
+        rating: 5.0,
+        comment:
+            '${widget.equipment.ownerName} is an amazing host!  Very responsive and the equipment was exactly as described.  Highly recommend renting from them!',
+        date: DateTime.now().subtract(const Duration(days: 5)),
+      ),
+      OwnerReview(
+        userName: 'Tom Wilson',
+        userAvatarUrl: 'https://i.pravatar.cc/150?img=3',
+        rating: 5.0,
+        comment:
+            'Great communication and flexible with pickup times. Equipment was clean and well-maintained.  Will definitely rent again!',
+        date: DateTime.now().subtract(const Duration(days: 18)),
+      ),
+      OwnerReview(
+        userName: 'Sarah Chen',
+        userAvatarUrl: 'https://i.pravatar.cc/150?img=9',
+        rating: 4.5,
+        comment:
+            'Very professional and helpful.  Gave us great tips on where to go.  The gear was top quality!',
+        date: DateTime.now().subtract(const Duration(days: 32)),
+      ),
+    ];
+  }
 
   @override
   void initState() {
     super.initState();
     _checkIfFavorited();
+    // ✅ ADD THIS:
+    _scrollController.addListener(_onScroll);
   }
 
   Future<void> _checkIfFavorited() async {
     final user = _authService.currentUser;
-    
+
     if (user == null) {
       setState(() => _isLoadingFavorite = false);
       return;
@@ -75,7 +126,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
         user.uid,
         widget.equipment.id,
       );
-      
+
       if (mounted) {
         setState(() {
           _isFavorite = isFavorited;
@@ -90,6 +141,34 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
     }
   }
 
+  // ✅ ADD THIS METHOD:
+  void _onScroll() {
+    final currentScroll = _scrollController.position.pixels;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+
+    // Show bottom bar if:
+    // 1. Scrolling up
+    // 2. At the top
+    // 3. Near the bottom (last 100px)
+    final shouldShow = currentScroll < _lastScrollPosition || // Scrolling up
+        currentScroll <= 50 || // At top
+        currentScroll >= maxScroll - 100; // Near bottom
+
+    if (shouldShow != _showBottomBar) {
+      setState(() {
+        _showBottomBar = shouldShow;
+      });
+    }
+
+    _lastScrollPosition = currentScroll;
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose(); // ✅ ADD THIS
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -101,12 +180,14 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
         children: [
           // Scrollable Content
           CustomScrollView(
+            controller: _scrollController,
             slivers: [
-              // App Bar with Image
+              // ✅ UPDATED:  Taller App Bar with Better Image Display
               SliverAppBar(
-                expandedHeight: 300,
+                expandedHeight: MediaQuery.of(context).size.height *
+                    0.45, // ✅ 45% of screen height
                 pinned: true,
-                backgroundColor:   Colors.white,
+                backgroundColor: Colors.white,
                 leading: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -115,7 +196,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.2),
-                        blurRadius:   8,
+                        blurRadius: 8,
                       ),
                     ],
                   ),
@@ -125,7 +206,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                   ),
                 ),
                 actions: [
-                  if (_authService.currentUser?. uid == widget.equipment. ownerId)
+                  if (_authService.currentUser?.uid == widget.equipment.ownerId)
                     Container(
                       margin: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -133,7 +214,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:  Colors.black.withOpacity(0.2),
+                            color: Colors.black.withOpacity(0.2),
                             blurRadius: 8,
                           ),
                         ],
@@ -144,18 +225,18 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => EditEquipmentScreen(equipment: widget.equipment),
+                              builder: (_) => EditEquipmentScreen(
+                                  equipment: widget.equipment),
                             ),
                           );
-                          
+
                           if (result == true && mounted) {
-                            // Refresh or go back
                             Navigator.pop(context);
                           }
                         },
                       ),
                     ),
-                  
+
                   // Share button
                   Container(
                     margin: const EdgeInsets.all(8),
@@ -170,15 +251,17 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons. share, color: Colors.black87),
+                      icon: const Icon(Icons.share, color: Colors.black87),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Share functionality coming soon!')),
+                          const SnackBar(
+                              content:
+                                  Text('Share functionality coming soon!')),
                         );
                       },
                     ),
                   ),
-                  
+
                   // Favorite button
                   Container(
                     margin: const EdgeInsets.all(8),
@@ -187,13 +270,13 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color:  Colors.black.withOpacity(0.2),
+                          color: Colors.black.withOpacity(0.2),
                           blurRadius: 8,
                         ),
                       ],
                     ),
                     child: _isLoadingFavorite
-                        ?  const Padding(
+                        ? const Padding(
                             padding: EdgeInsets.all(12),
                             child: SizedBox(
                               width: 24,
@@ -203,33 +286,35 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                           )
                         : IconButton(
                             icon: Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_border,
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
                               color: _isFavorite ? Colors.red : Colors.black87,
                             ),
                             onPressed: () async {
                               final user = _authService.currentUser;
-                              
+
                               if (user == null) {
-                                // Show login prompt
-                                ScaffoldMessenger. of(context).showSnackBar(
+                                ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Please login to save favorites'),
+                                    content:
+                                        Text('Please login to save favorites'),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
                                 return;
                               }
 
-                              // Optimistic update
                               setState(() {
                                 _isFavorite = !_isFavorite;
                               });
 
                               try {
-                                final newStatus = await _favoritesService. toggleFavorite(
+                                final newStatus =
+                                    await _favoritesService.toggleFavorite(
                                   user.uid,
                                   widget.equipment.id,
-                                  ! _isFavorite,  // Pass previous state
+                                  !_isFavorite,
                                 );
 
                                 if (mounted) {
@@ -240,8 +325,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        newStatus 
-                                            ? '❤️ Added to favorites' 
+                                        newStatus
+                                            ? '❤️ Added to favorites'
                                             : 'Removed from favorites',
                                       ),
                                       duration: const Duration(seconds: 1),
@@ -249,11 +334,9 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                                     ),
                                   );
 
-                                  // Return true to signal favorite was changed
                                   Navigator.pop(context, true);
                                 }
                               } catch (e) {
-                                // Revert on error
                                 if (mounted) {
                                   setState(() {
                                     _isFavorite = !_isFavorite;
@@ -274,7 +357,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   background: ImageCarousel(
                     imageUrls: widget.equipment.imageUrls,
-                    height: 300,
+                    height: MediaQuery.of(context).size.height *
+                        0.45, // ✅ Match expanded height
                   ),
                 ),
               ),
@@ -289,22 +373,15 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                       color: Colors.white,
                       padding: const EdgeInsets.all(20),
                       child: Column(
-                        crossAxisAlignment:   CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Title & Verified Badge
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.equipment.title,
-                                  style: TextStyle(
-                                    fontSize:   isTablet ? 28 : 24,
-                                    fontWeight:  FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              // ✅ Removed isVerified check - doesn't exist in model
-                            ],
+                          // Title
+                          Text(
+                            widget.equipment.title,
+                            style: TextStyle(
+                              fontSize: isTablet ? 28 : 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
 
                           const SizedBox(height: 12),
@@ -313,23 +390,25 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                           Row(
                             children: [
                               if (widget.equipment.reviewCount > 0) ...[
-                                const Icon(Icons.star, size: 20, color: AppColors.accent),
+                                const Icon(Icons.star,
+                                    size: 20, color: AppColors.accent),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${widget.equipment.displayRating} (${widget.equipment.reviewCount} reviews)',  // ✅ Fixed
-                                  style:   const TextStyle(
+                                  '${widget.equipment.displayRating} (${widget.equipment.reviewCount} reviews)',
+                                  style: const TextStyle(
                                     fontSize: 15,
-                                    fontWeight:   FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                Text('•', style: TextStyle(color: Colors.grey[400])),
+                                Text('•',
+                                    style: TextStyle(color: Colors.grey[400])),
                                 const SizedBox(width: 12),
                               ],
                               Text(
-                                '${widget.equipment.category. icon} ${widget.equipment.category. displayName}',  // ✅ Fixed
-                                style:  TextStyle(
-                                  fontSize:   15,
+                                '${widget.equipment.category.icon} ${widget.equipment.category.displayName}',
+                                style: TextStyle(
+                                  fontSize: 15,
                                   color: Colors.grey[700],
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -342,13 +421,14 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                           // Location
                           Row(
                             children: [
-                              Icon(Icons.location_on, size: 20, color: AppColors.primary),
+                              const Icon(Icons.location_on,
+                                  size: 20, color: AppColors.primary),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   widget.equipment.location,
                                   style: TextStyle(
-                                    fontSize:  15,
+                                    fontSize: 15,
                                     color: Colors.grey[700],
                                   ),
                                 ),
@@ -364,28 +444,29 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     // Owner Info
                     Container(
                       color: Colors.white,
-                      padding: const EdgeInsets.  all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 28,
-                            backgroundImage: widget.equipment.ownerImageUrl != null  // ✅ Fixed
+                            backgroundImage: widget.equipment.ownerImageUrl !=
+                                    null
                                 ? NetworkImage(widget.equipment.ownerImageUrl!)
                                 : null,
                             backgroundColor: Colors.grey[200],
                             child: widget.equipment.ownerImageUrl == null
-                                ? const Icon(Icons. person, color: Colors.grey)
+                                ? const Icon(Icons.person, color: Colors.grey)
                                 : null,
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
                                   'Hosted by',
-                                  style:   TextStyle(
-                                    fontSize:  12,
+                                  style: TextStyle(
+                                    fontSize: 12,
                                     color: Colors.grey,
                                   ),
                                 ),
@@ -394,22 +475,45 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                                   widget.equipment.ownerName,
                                   style: const TextStyle(
                                     fontSize: 17,
-                                    fontWeight:   FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           OutlinedButton(
-                            onPressed: () {
-                              // TODO: Navigate to owner profile
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Owner profile coming soon!')),
+                            onPressed: () async {
+                              // ✅ Get owner's other listings
+                              final ownerListings =
+                                  await _equipmentService.getEquipmentByOwner(
+                                      widget.equipment.ownerId);
+
+                              if (!mounted) return;
+
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => OwnerProfileBottomSheet(
+                                  ownerId: widget.equipment.ownerId,
+                                  ownerName: widget.equipment.ownerName,
+                                  ownerImageUrl: widget.equipment.ownerImageUrl,
+                                  location: widget.equipment.location,
+                                  bio:
+                                      'Passionate about water sports and sharing amazing equipment with the community. I\'ve been renting out my gear for over 3 years!',
+                                  ownerListings: ownerListings,
+                                  ownerReviews: _getOwnerReviews(),
+                                  rating: 4.9,
+                                  reviewCount: _getOwnerReviews().length,
+                                ),
                               );
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: AppColors.primary),
                               foregroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                             child: const Text('View Profile'),
                           ),
@@ -422,23 +526,23 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     // Description
                     Container(
                       color: Colors.white,
-                      padding: const EdgeInsets.  all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
-                        crossAxisAlignment:  CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'Description',
-                            style:  TextStyle(
-                              fontSize:  18,
+                            style: TextStyle(
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height:  12),
+                          const SizedBox(height: 12),
                           Text(
                             widget.equipment.description,
                             style: TextStyle(
                               fontSize: 15,
-                              color: Colors.  grey[700],
+                              color: Colors.grey[700],
                               height: 1.6,
                             ),
                           ),
@@ -449,12 +553,12 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     const SizedBox(height: 8),
 
                     // What's Included
-                    if (widget.equipment.features.isNotEmpty)  // ✅ Fixed
+                    if (widget.equipment.features.isNotEmpty)
                       Container(
-                        color:  Colors.white,
+                        color: Colors.white,
                         padding: const EdgeInsets.all(20),
                         child: Column(
-                          crossAxisAlignment:  CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               "What's Included",
@@ -464,54 +568,15 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            ... widget.equipment.features.map((feature) => _buildIncludedItem(feature)),  // ✅ Fixed
+                            ...widget.equipment.features
+                                .map((feature) => _buildIncludedItem(feature)),
                           ],
                         ),
                       ),
 
                     const SizedBox(height: 8),
 
-                    // Reviews Section
-                    if (widget.equipment.reviewCount > 0)
-                      Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.  all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.star, size: 24, color: AppColors.accent),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${widget.equipment.displayRating} • ${widget.equipment.reviewCount} reviews',  // ✅ Fixed
-                                      style:   const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight:   FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    // TODO: Show all reviews
-                                  },
-                                  child: const Text('See all'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            ..._getReviews().take(2).map((review) => ReviewCard(review:   review)),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 8),
-
-                    // ✅ NEW: Delivery Options
+                    // ✅ UPDATED: Delivery Options with Better Layout
                     Container(
                       color: Colors.white,
                       padding: const EdgeInsets.all(20),
@@ -525,39 +590,51 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height:  16),
-                          
-                          // Pickup option
+                          const SizedBox(height: 16),
+
+                          // ✅ Pickup option
                           if (widget.equipment.requiresPickup)
                             _buildDeliveryOption(
                               Icons.store,
                               'Pickup Available',
                               'Collect from ${widget.equipment.location}',
-                              Colors.blue,
+                              AppColors.primary,
                             ),
-                          
-                          if (widget.equipment.requiresPickup && widget.equipment.offersDelivery)
-                            const SizedBox(height: 12),
-                          
-                          // Delivery option
+
+                          if (widget.equipment.requiresPickup &&
+                              widget.equipment.offersDelivery)
+                            const SizedBox(height: 16), // ✅ More spacing
+
+                          // ✅ Delivery option
                           if (widget.equipment.offersDelivery)
                             _buildDeliveryOption(
                               Icons.local_shipping,
                               'Delivery Available',
-                              widget.equipment.deliveryFeeText ??  'Contact owner for delivery',
+                              widget.equipment.deliveryFeeText ??
+                                  'Contact owner for delivery details',
                               Colors.green,
                             ),
-                          
-                          if (widget.equipment.offersDelivery && widget.equipment.deliveryRadius != null) ...[
-                            const SizedBox(height: 8),
+
+                          // ✅ Delivery radius info
+                          if (widget.equipment.offersDelivery &&
+                              widget.equipment.deliveryRadius != null) ...[
+                            const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.only(left: 40),
-                              child: Text(
-                                'Within ${widget.equipment.deliveryRadius! .toStringAsFixed(0)}km radius',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
+                              padding: const EdgeInsets.only(left: 44),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.info_outline,
+                                      size: 16, color: Colors.grey[600]),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Within ${widget.equipment.deliveryRadius!.toStringAsFixed(0)}km radius',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -565,27 +642,72 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                       ),
                     ),
 
+                    const SizedBox(height: 8),
+
+                    // Reviews Section
+                    if (widget.equipment.reviewCount > 0)
+                      Container(
+                        color: Colors.white,
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star,
+                                        size: 24, color: AppColors.accent),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${widget.equipment.displayRating} • ${widget.equipment.reviewCount} reviews',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    // TODO: Show all reviews
+                                  },
+                                  child: const Text('See all'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ..._getReviews()
+                                .take(2)
+                                .map((review) => ReviewCard(review: review)),
+                          ],
+                        ),
+                      ),
+
                     // Bottom spacing for sticky button
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 165),
                   ],
                 ),
               ),
             ],
           ),
 
-          // Sticky Bottom Bar with Price & Book Button
-          Positioned(
-            bottom:  0,
+          // ✅ UPDATED:  Animated Bottom Bar
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            bottom: _showBottomBar ? 0 : -100, // ✅ Hide by moving down
             left: 0,
             right: 0,
             child: Container(
-              padding: EdgeInsets. all(isTablet ? 24 : 16),
+              padding: EdgeInsets.all(isTablet ? 24 : 16),
               decoration: BoxDecoration(
-                color: Colors.  white,
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
-                    blurRadius:   10,
+                    blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
                 ],
@@ -595,21 +717,15 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                   children: [
                     // Price
                     Column(
-                      crossAxisAlignment:   CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        RichText(
-                          text:  TextSpan(
-                            children:  [
-                              TextSpan(
-                                text: widget.equipment.pricePerHourText,  // ✅ Fixed
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight:  FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          widget.equipment.pricePerHourText,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -620,7 +736,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     // Book Now Button
                     Expanded(
                       child: SizedBox(
-                        height:   56,
+                        height: 56,
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.push(
@@ -632,16 +748,16 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                               ),
                             );
                           },
-                          style:  ElevatedButton.styleFrom(
-                            backgroundColor: AppColors. accent,
-                            foregroundColor:   Colors.white,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: Colors.white,
                             elevation: 0,
                           ),
                           child: const Text(
                             'Book Now',
-                            style:  TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
-                              fontWeight:  FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -659,69 +775,88 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
 
   Widget _buildIncludedItem(String item) {
     return Padding(
-      padding: const EdgeInsets. only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: AppColors. success. withOpacity(0.1),
+              color: AppColors.success.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.check,
               size: 16,
-              color: AppColors. success,
+              color: AppColors.success,
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            item,
-            style:  TextStyle(
-              fontSize: 15,
-              color: Colors.grey[800],
+          Expanded(
+            // ✅ Added Expanded to prevent overflow
+            child: Text(
+              item,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[800],
+              ),
             ),
           ),
         ],
       ),
     );
   }
-  Widget _buildDeliveryOption(IconData icon, String title, String subtitle, Color color) {
-  return Row(
-    children: [
-      Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color. withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: color, size: 20),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
+
+  // ✅ UPDATED: Better delivery option widget
+  Widget _buildDeliveryOption(
+      IconData icon, String title, String subtitle, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1.5,
         ),
       ),
-      Icon(Icons.check_circle, color: color, size: 20),
-    ],
-  );
-}
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 2, // ✅ Allow 2 lines for longer text
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.check_circle, color: color, size: 22),
+        ],
+      ),
+    );
+  }
 }

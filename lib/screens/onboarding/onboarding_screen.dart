@@ -17,17 +17,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingPage(
       icon: Icons.calendar_month_rounded,
       title: 'Easy Booking & Scheduling',
-      description: 'Book water sports equipment with just a few taps.  Choose your preferred time slot and get instant confirmation.',
+      description:
+          'Book water sports equipment with just a few taps. Choose your preferred time slot and get instant confirmation.',
     ),
     OnboardingPage(
       icon: Icons.payments_rounded,
       title: 'Secure Payments & Reviews',
-      description: 'Pay securely through multiple payment methods. Read reviews and ratings to make informed decisions.',
+      description:
+          'Pay securely through multiple payment methods. Read reviews and ratings to make informed decisions.',
     ),
     OnboardingPage(
       icon: Icons.beach_access_rounded,
       title: 'Explore Local Beaches',
-      description: 'Discover the best beaches that Aotearoa, New Zealand has to offer.  Rent kayaks, SUPs, and more from locals near you.',
+      description:
+          'Discover the best beaches that Aotearoa, New Zealand has to offer.',
     ),
   ];
 
@@ -40,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             // Skip Button
             Align(
-              alignment: Alignment. topRight,
+              alignment: Alignment.topRight,
               child: TextButton(
                 onPressed: () => _goToLogin(),
                 child: const Text(
@@ -73,7 +76,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                _pages. length,
+                _pages.length,
                 (index) => _buildIndicator(index == _currentPage),
               ),
             ),
@@ -84,10 +87,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: SizedBox(
-                width: double.infinity,
+                width: 240,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed:  () {
+                  onPressed: () {
                     if (_currentPage < _pages.length - 1) {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 300),
@@ -103,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   child: Text(
                     _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
-                    style:  const TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
               ),
@@ -132,58 +135,58 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page) {
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isTablet = screenWidth > 600;
-  
-  return Padding(
-    padding: EdgeInsets.all(isTablet ? 60 : 40),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Icon
-        Container(
-          width: isTablet ? 160 : 120,
-          height: isTablet ? 160 : 120,
-          decoration: BoxDecoration(
-            color: AppColors.primary. withOpacity(0.1),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Icon(
-            page.icon,
-            size: isTablet ? 80 : 60,
-            color: AppColors.primary,
-          ),
-        ),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
 
-        SizedBox(height: isTablet ? 60 : 48),
-
-        // Title
-        Text(
-          page.title,
-          style: TextStyle(
-            fontSize: isTablet ? 32 : 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+    return Padding(
+      padding: EdgeInsets.all(isTablet ? 60 : 40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon
+          Container(
+            width: isTablet ? 160 : 120,
+            height: isTablet ? 160 : 120,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Icon(
+              page.icon,
+              size: isTablet ? 80 : 60,
+              color: AppColors.primary,
+            ),
           ),
-          textAlign: TextAlign.center,
-        ),
 
-        SizedBox(height: isTablet ? 24 : 16),
+          SizedBox(height: isTablet ? 60 : 48),
 
-        // Description
-        Text(
-          page. description,
-          style: TextStyle(
-            fontSize: isTablet ? 18 : 16,
-            color: Colors.grey[600],
-            height: 1.5,
+          // Title
+          Text(
+            page.title,
+            style: TextStyle(
+              fontSize: isTablet ? 32 : 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ),
-  );
-}
+
+          SizedBox(height: isTablet ? 24 : 16),
+
+          // Description
+          Text(
+            page.description,
+            style: TextStyle(
+              fontSize: isTablet ? 18 : 16,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildIndicator(bool isActive) {
     return AnimatedContainer(

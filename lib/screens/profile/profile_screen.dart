@@ -4,12 +4,12 @@ import '../../core/constants/mock_data.dart';
 import '../../widgets/booking_card.dart';
 import '../../widgets/equipment_card.dart';
 import '../../models/user_model.dart';
-import '../../models/equipment_model.dart';  // ✅ Add this
+import '../../models/equipment_model.dart'; // ✅ Add this
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
-import '../../services/equipment_service.dart';  // ✅ Add this
+import '../../services/equipment_service.dart'; // ✅ Add this
 import '../equipment/equipment_detail_screen.dart';
-import '../list_equipment/list_equipment_screen.dart';  // ✅ Add this
+import '../list_equipment/list_equipment_screen.dart'; // ✅ Add this
 import '../auth/login_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -20,23 +20,24 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _authService = AuthService();
   final _userService = UserService();
-  final _equipmentService = EquipmentService();  // ✅ Add this
-  
+  final _equipmentService = EquipmentService(); // ✅ Add this
+
   UserModel? _currentUser;
-  List<EquipmentModel> _userListings = [];  // ✅ Changed from mock data
+  List<EquipmentModel> _userListings = []; // ✅ Changed from mock data
   bool _isLoading = true;
-  bool _isLoadingListings = true;  // ✅ Add this
+  bool _isLoadingListings = true; // ✅ Add this
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadUserData();
-    _loadUserListings();  // ✅ Add this
+    _loadUserListings(); // ✅ Add this
   }
 
   Future<void> _loadUserData() async {
@@ -83,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   void dispose() {
-    _tabController. dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -99,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       return Scaffold(
         body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment. center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text('Not logged in'),
               ElevatedButton(
@@ -118,7 +119,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
 
     final bookings = MockData.getMockBookings();
-    final upcomingBookings = bookings.where((b) => b.isUpcoming || b.isActive).toList();
+    final upcomingBookings =
+        bookings.where((b) => b.isUpcoming || b.isActive).toList();
     final pastBookings = bookings.where((b) => b.isPast).toList();
 
     return Scaffold(
@@ -143,21 +145,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               ? NetworkImage(_currentUser!.profileImageUrl!)
                               : null,
                           child: _currentUser!.profileImageUrl == null
-                              ? Icon(Icons.person, size: 50, color: Colors.grey[400])
+                              ? Icon(Icons.person,
+                                  size: 50, color: Colors.grey[400])
                               : null,
                         ),
                         Positioned(
-                          bottom:  0,
+                          bottom: 0,
                           right: 0,
                           child: GestureDetector(
                             onTap: () async {
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder:  (_) => EditProfileScreen(user: _currentUser!),
+                                  builder: (_) =>
+                                      EditProfileScreen(user: _currentUser!),
                                 ),
                               );
-                              
+
                               if (result == true) {
                                 _loadUserData();
                               }
@@ -167,12 +171,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               decoration: BoxDecoration(
                                 color: AppColors.primary,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
+                                border:
+                                    Border.all(color: Colors.white, width: 3),
                               ),
                               child: const Icon(
                                 Icons.edit,
                                 size: 16,
-                                color: Colors. white,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -206,12 +211,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     if (_currentUser!.location != null) ...[
                       const SizedBox(height: 8),
                       Row(
-                        mainAxisAlignment:  MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                          Icon(Icons.location_on,
+                              size: 16, color: Colors.grey[600]),
                           const SizedBox(width: 4),
                           Text(
-                            _currentUser!.location! ,
+                            _currentUser!.location!,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -225,20 +231,22 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
                     // Rating
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical:  8),
-                      decoration:  BoxDecoration(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
                         color: AppColors.accent.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star, size: 18, color: AppColors.accent),
+                          const Icon(Icons.star,
+                              size: 18, color: AppColors.accent),
                           const SizedBox(width: 6),
                           Text(
                             '${_currentUser!.displayRating} ${_currentUser!.reviewText}',
                             style: const TextStyle(
-                              fontSize:  14,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -247,10 +255,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
 
                     // Bio (if set)
-                    if (_currentUser!.bio != null && _currentUser!.bio!.isNotEmpty) ...[
+                    if (_currentUser!.bio != null &&
+                        _currentUser!.bio!.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       Text(
-                        _currentUser! .bio!,
+                        _currentUser!.bio!,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[700],
@@ -276,7 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         Expanded(
                           child: _buildStatCard(
                             Icons.inventory_2_outlined,
-                            _userListings.length.toString(),  // ✅ Use real count
+                            _userListings.length.toString(), // ✅ Use real count
                             'Listings',
                             AppColors.accent.withOpacity(0.1),
                           ),
@@ -309,10 +318,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ),
                         ),
                         TextButton(
-                          onPressed:  () {
+                          onPressed: () {
                             // TODO: Navigate to all bookings
                           },
-                          child:  const Text('View All'),
+                          child: const Text('View All'),
                         ),
                       ],
                     ),
@@ -331,7 +340,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       ),
                       tabs: [
                         Tab(text: 'Upcoming (${upcomingBookings.length})'),
-                        Tab(text:  'Past (${pastBookings.length})'),
+                        Tab(text: 'Past (${pastBookings.length})'),
                       ],
                     ),
                   ],
@@ -343,13 +352,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             SliverToBoxAdapter(
               child: Container(
                 color: Colors.white,
-                padding: const EdgeInsets. symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 constraints: const BoxConstraints(
                   minHeight: 200,
                   maxHeight: 500,
                 ),
-                child:  TabBarView(
-                  controller:  _tabController,
+                child: TabBarView(
+                  controller: _tabController,
                   children: [
                     // Upcoming Bookings
                     upcomingBookings.isEmpty
@@ -364,14 +373,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             physics: const ClampingScrollPhysics(),
                             itemCount: upcomingBookings.length,
                             itemBuilder: (context, index) {
-                              return BookingCard(booking: upcomingBookings[index]);
+                              return BookingCard(
+                                  booking: upcomingBookings[index]);
                             },
                           ),
 
                     // Past Bookings
-                    pastBookings. isEmpty
+                    pastBookings.isEmpty
                         ? _buildEmptyState(
-                            Icons. history,
+                            Icons.history,
                             'No Past Bookings',
                             'Your rental history will appear here',
                           )
@@ -393,8 +403,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
             // ✅ MY LISTINGS SECTION - UPDATED TO USE REAL DATA
             SliverToBoxAdapter(
-              child:  Container(
-                color: Colors. white,
+              child: Container(
+                color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(20, 20, 0, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          TextButton. icon(
+                          TextButton.icon(
                             onPressed: () async {
                               // ✅ Navigate to List Equipment screen
                               final result = await Navigator.push(
@@ -420,13 +430,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   builder: (_) => const ListEquipmentScreen(),
                                 ),
                               );
-                              
+
                               // Refresh listings if equipment was added
                               if (result == true) {
                                 _loadUserListings();
                               }
                             },
-                            icon:  const Icon(Icons.add),
+                            icon: const Icon(Icons.add),
                             label: const Text('Add'),
                           ),
                         ],
@@ -442,7 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             child: Center(child: CircularProgressIndicator()),
                           )
                         : _userListings.isEmpty
-                            ?  Padding(
+                            ? Padding(
                                 padding: const EdgeInsets.only(right: 20),
                                 child: _buildEmptyState(
                                   Icons.inventory_2_outlined,
@@ -451,7 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 ),
                               )
                             : Column(
-                                crossAxisAlignment:  CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(
                                     height: 250,
@@ -463,15 +473,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                       itemBuilder: (context, index) {
                                         return Container(
                                           width: 180,
-                                          margin: const EdgeInsets.only(right: 12),
+                                          margin:
+                                              const EdgeInsets.only(right: 12),
                                           child: EquipmentCard(
                                             equipment: _userListings[index],
                                             onTap: () {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder:  (_) => EquipmentDetailScreen(
-                                                    equipment: _userListings[index],
+                                                  builder: (_) =>
+                                                      EquipmentDetailScreen(
+                                                    equipment:
+                                                        _userListings[index],
                                                   ),
                                                 ),
                                               );
@@ -481,14 +494,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                       },
                                     ),
                                   ),
-                                  
                                   if (_userListings.length > 1)
                                     Padding(
-                                      padding:  const EdgeInsets.only(top: 12, right: 20),
+                                      padding: const EdgeInsets.only(
+                                          top: 12, right: 20),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment. center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons. swipe, size: 16, color: Colors.grey[400]),
+                                          Icon(Icons.swipe,
+                                              size: 16,
+                                              color: Colors.grey[400]),
                                           const SizedBox(width: 8),
                                           Text(
                                             'Swipe to see more',
@@ -523,10 +539,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => EditProfileScreen(user: _currentUser!),
+                            builder: (_) =>
+                                EditProfileScreen(user: _currentUser!),
                           ),
                         );
-                        
+
                         if (result == true) {
                           _loadUserData();
                         }
@@ -537,7 +554,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       'Notifications',
                       () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Notifications coming soon!')),
+                          const SnackBar(
+                              content: Text('Notifications coming soon!')),
                         );
                       },
                     ),
@@ -545,8 +563,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       Icons.payment_outlined,
                       'Payment Methods',
                       () {
-                        ScaffoldMessenger. of(context).showSnackBar(
-                          const SnackBar(content: Text('Payment Methods coming soon!')),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Payment Methods coming soon!')),
                         );
                       },
                     ),
@@ -554,8 +573,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       Icons.help_outline,
                       'Help & Support',
                       () {
-                        ScaffoldMessenger. of(context).showSnackBar(
-                          const SnackBar(content: Text('Help & Support coming soon!')),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Help & Support coming soon!')),
                         );
                       },
                     ),
@@ -564,7 +584,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       'Terms & Privacy',
                       () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Terms & Privacy coming soon!')),
+                          const SnackBar(
+                              content: Text('Terms & Privacy coming soon!')),
                         );
                       },
                     ),
@@ -586,32 +607,33 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildStatCard(IconData icon, String value, String label, Color color) {
+  Widget _buildStatCard(
+      IconData icon, String value, String label, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(),
-        borderRadius: BorderRadius. circular(16),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 28),
+          Icon(icon, color: color.withOpacity(1.0), size: 28),
           const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
-              fontSize:  24,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: color.withOpacity(1.0),
             ),
           ),
-          const SizedBox(height:  4),
+          const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -621,22 +643,22 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildEmptyState(IconData icon, String title, String subtitle) {
     return Center(
-      child:  Padding(
+      child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size:  64, color: Colors.grey[300]),
+            Icon(icon, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
               title,
               style: TextStyle(
-                fontSize:  18,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[600],
               ),
             ),
-            const SizedBox(height:  8),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               style: TextStyle(
@@ -651,7 +673,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
+  Widget _buildSettingItem(IconData icon, String title, VoidCallback onTap,
+      {bool isDestructive = false}) {
     return ListTile(
       leading: Icon(
         icon,
@@ -666,7 +689,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       trailing: Icon(
         Icons.chevron_right,
-        color:  Colors.grey[400],
+        color: Colors.grey[400],
       ),
       onTap: onTap,
     );
@@ -676,7 +699,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title:  const Text('Logout'),
+        title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
@@ -687,7 +710,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             onPressed: () async {
               await _authService.signOut();
               if (context.mounted) {
-                Navigator. of(context).pushAndRemoveUntil(
+                Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (route) => false,
                 );

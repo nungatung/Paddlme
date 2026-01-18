@@ -23,7 +23,7 @@ class _LocationPickerState extends State<LocationPicker> {
 
   @override
   void dispose() {
-    _searchController. dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -36,7 +36,7 @@ class _LocationPickerState extends State<LocationPicker> {
     setState(() => _isSearching = true);
 
     try {
-      final results = await LocationService.searchLocation(query);
+      final results = await LocationService.searchLocationDetailed(query);
       if (mounted) {
         setState(() {
           _searchResults = List<LocationResult>.from(results);
@@ -60,7 +60,7 @@ class _LocationPickerState extends State<LocationPicker> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]! ),
+          border: Border.all(color: Colors.grey[300]!),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -72,13 +72,13 @@ class _LocationPickerState extends State<LocationPicker> {
                 widget.selectedLocation ?? 'Select your location',
                 style: TextStyle(
                   fontSize: 16,
-                  color: widget.selectedLocation != null 
-                      ? Colors.black87 
+                  color: widget.selectedLocation != null
+                      ? Colors.black87
                       : Colors.grey[600],
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors. grey[400]),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),
       ),
@@ -87,7 +87,7 @@ class _LocationPickerState extends State<LocationPicker> {
 
   void _showLocationPicker(BuildContext context) {
     showModalBottomSheet(
-      context:  context,
+      context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -105,7 +105,7 @@ class _LocationPickerState extends State<LocationPicker> {
               children: [
                 // Header
                 Row(
-                  mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Select Location',
@@ -120,7 +120,7 @@ class _LocationPickerState extends State<LocationPicker> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
 
                 // Search Bar
@@ -156,21 +156,22 @@ class _LocationPickerState extends State<LocationPicker> {
                 // Loading Indicator
                 if (_isSearching)
                   const Center(
-                    child:  Padding(
+                    child: Padding(
                       padding: EdgeInsets.all(20),
                       child: CircularProgressIndicator(),
                     ),
                   ),
 
                 // Search Results
-                if (! _isSearching && _searchResults.isNotEmpty)
+                if (!_isSearching && _searchResults.isNotEmpty)
                   Expanded(
                     child: ListView.builder(
                       controller: scrollController,
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
                         final location = _searchResults[index];
-                        final isSelected = location.displayName == widget.selectedLocation;
+                        final isSelected =
+                            location.displayName == widget.selectedLocation;
 
                         return ListTile(
                           leading: Text(
@@ -178,21 +179,26 @@ class _LocationPickerState extends State<LocationPicker> {
                             style: const TextStyle(fontSize: 24),
                           ),
                           title: Text(
-                            location. text,
+                            location.text,
                             style: TextStyle(
-                              fontWeight: isSelected ? FontWeight. bold : FontWeight.normal,
-                              color: isSelected ? AppColors.primary : Colors.black87,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.black87,
                             ),
                           ),
                           subtitle: Text(
                             location.displayName,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors. grey[600],
+                              color: Colors.grey[600],
                             ),
                           ),
                           trailing: isSelected
-                              ? const Icon(Icons.check_circle, color: AppColors.primary)
+                              ? const Icon(Icons.check_circle,
+                                  color: AppColors.primary)
                               : null,
                           onTap: () {
                             widget.onLocationSelected(location.displayName);
@@ -204,19 +210,22 @@ class _LocationPickerState extends State<LocationPicker> {
                   ),
 
                 // Empty State
-                if (! _isSearching && _searchResults.isEmpty && _searchController.text.length >= 2)
+                if (!_isSearching &&
+                    _searchResults.isEmpty &&
+                    _searchController.text.length >= 2)
                   Expanded(
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+                          Icon(Icons.search_off,
+                              size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 16),
                           Text(
                             'No locations found',
-                            style:  TextStyle(
-                              fontSize:  16,
-                              color: Colors. grey[600],
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -233,14 +242,15 @@ class _LocationPickerState extends State<LocationPicker> {
                   ),
 
                 // Initial State
-                if (_searchController. text.length < 2 && _searchResults.isEmpty)
+                if (_searchController.text.length < 2 && _searchResults.isEmpty)
                   Expanded(
-                    child:  Center(
+                    child: Center(
                       child: Column(
-                        mainAxisAlignment:  MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.location_searching, size: 64, color:  Colors.grey[300]),
-                          const SizedBox(height:  16),
+                          Icon(Icons.location_searching,
+                              size: 64, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
                           Text(
                             'Start typing to search',
                             style: TextStyle(

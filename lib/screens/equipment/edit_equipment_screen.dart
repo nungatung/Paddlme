@@ -336,8 +336,8 @@ class _EditEquipmentScreenState extends State<EditEquipmentScreen> {
                 prefixText: 'NZ\$ ',
                 prefixStyle: const TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
@@ -347,8 +347,8 @@ class _EditEquipmentScreenState extends State<EditEquipmentScreen> {
                 ),
               ),
               style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
               validator: (value) {
                 if (value == null || value. isEmpty) {

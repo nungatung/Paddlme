@@ -6,13 +6,15 @@ import 'package:wave_share/services/user_service.dart';
 import 'package:wave_share/services/storage_service.dart';
 import 'package:wave_share/services/auth_service.dart';
 import 'package:wave_share/widgets/location_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
 
   const EditProfileScreen({
     super.key,
-    required this. user,
+    required this.user,
   });
 
   @override
@@ -29,15 +31,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _authService = AuthService();
 
   File? _selectedImage;
+  Uint8List? _profileImageBytes; // For Web
   String? _selectedLocation;
   bool _isLoading = false;
   bool _imageChanged = false;
 
+  // Image handling
+  final List<File> _selectedImages = []; // ✅ Changed to File list
+  final List<String> _photoUrls = []; // Keep for preview
+  final List<Uint8List> _selectedImageBytes = [];
+
   @override
   void initState() {
     super.initState();
-    _nameController.text = widget.user. name;
-    _bioController. text = widget.user.bio ??  '';
+    _nameController.text = widget.user.name;
+    _bioController.text = widget.user.bio ?? '';
     _phoneController.text = widget.user.phoneNumber ?? '';
     _selectedLocation = widget.user.location;
   }
@@ -51,62 +59,249 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    showModalBottomSheet(
-      context:  context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child:  Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
-              onTap:  () async {
-                Navigator.pop(context);
-                final image = await _storageService.pickImageFromGallery();
-                if (image != null) {
-                  setState(() {
-                    _selectedImage = image;
-                    _imageChanged = true;
-                  });
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a photo'),
-              onTap:  () async {
-                Navigator.pop(context);
-                final image = await _storageService.pickImageFromCamera();
-                if (image != null) {
-                  setState(() {
-                    _selectedImage = image;
-                    _imageChanged = true;
-                  });
-                }
-              },
-            ),
-            if (widget.user.profileImageUrl != null || _selectedImage != null)
-              ListTile(
-                leading:  const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Remove photo', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedImage = null;
-                    _imageChanged = true;
-                  });
-                },
-              ),
-          ],
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      if (kIsWeb) {
+        // For web:  store bytes
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _selectedImageBytes.add(bytes);
+          _photoUrls.add(image.path);
+        });
+      } else {
+        // For mobile: store file
+        final file = File(image.path);
+        setState(() {
+          _selectedImages.add(file);
+          _photoUrls.add(image.path);
+        });
+      }
+    }
+  }
+
+  // Pick Profile Image (Avatar)
+  Future<void> _pickProfileImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      setState(() => _imageChanged = true);
+
+      if (kIsWeb) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _profileImageBytes = bytes;
+          _selectedImage = null;
+        });
+      } else {
+        final file = File(image.path);
+        setState(() {
+          _selectedImage = file;
+          _profileImageBytes = null;
+        });
+      }
+    }
+  }
+
+  // Update photo grid to show local files
+  Widget _buildPhotoUpload() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Add photos of your equipment',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(
+          'Great photos help your listing stand out.  Add at least one photo.',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // Photo Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1,
+          ),
+          itemCount: _photoUrls.length + 1, // ✅ FIXED:  Use _photoUrls instead
+          itemBuilder: (context, index) {
+            if (index == _photoUrls.length) {
+              // ✅ FIXED
+              // Add photo button
+              return InkWell(
+                onTap: _pickImage,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 2,
+                      style: BorderStyle.solid,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.add_photo_alternate,
+                          size: 32,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Add Photo',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Photo preview - show local file
+            return Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: kIsWeb
+                      ? Image.memory(
+                          _selectedImageBytes[index],
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.file(
+                          _selectedImages[index],
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
+                      onPressed: () {
+                        setState(() {
+                          if (kIsWeb) {
+                            _selectedImageBytes
+                                .removeAt(index); // ✅ Remove from bytes
+                          } else {
+                            _selectedImages
+                                .removeAt(index); // ✅ Remove from files
+                          }
+                          _photoUrls
+                              .removeAt(index); // ✅ Always remove from URLs
+                        });
+                        debugPrint(
+                            '✅ Image removed. Total: ${_photoUrls.length}');
+                      },
+                    ),
+                  ),
+                ),
+                if (index == 0)
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Cover',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+
+        if (_photoUrls.isNotEmpty) ...[
+          // ✅ FIXED:  Use _photoUrls
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue[100]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'The first photo will be your cover image',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState! .validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
@@ -115,26 +310,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       // Upload new profile picture if changed
       if (_imageChanged) {
-        if (_selectedImage != null) {
+        if (_selectedImage != null || (kIsWeb && _profileImageBytes != null)) {
           // Delete old image if exists
           if (widget.user.profileImageUrl != null) {
             try {
-              await _storageService.deleteProfilePicture(widget.user.profileImageUrl!);
+              await _storageService
+                  .deleteProfilePicture(widget.user.profileImageUrl!);
             } catch (e) {
               debugPrint('Error deleting old image: $e');
             }
           }
-          
+
           // Upload new image
-          profileImageUrl = await _storageService.uploadProfilePicture(
-            widget.user.uid,
-            _selectedImage!,
-          );
+          if (kIsWeb && _profileImageBytes != null) {
+            profileImageUrl = await _storageService.uploadProfilePictureWeb(
+              widget.user.uid,
+              _profileImageBytes!,
+            );
+          } else if (_selectedImage != null) {
+            profileImageUrl = await _storageService.uploadProfilePicture(
+              widget.user.uid,
+              _selectedImage!,
+            );
+          }
         } else {
           // Remove profile picture
           if (widget.user.profileImageUrl != null) {
             try {
-              await _storageService. deleteProfilePicture(widget. user.profileImageUrl!);
+              await _storageService
+                  .deleteProfilePicture(widget.user.profileImageUrl!);
             } catch (e) {
               debugPrint('Error deleting image: $e');
             }
@@ -145,15 +349,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       // Update user data
       await _userService.updateUser(widget.user.uid, {
-        'name': _nameController.text. trim(),
-        'bio': _bioController.text.trim().isEmpty ? null : _bioController.text. trim(),
+        'name': _nameController.text.trim(),
+        'bio': _bioController.text.trim().isEmpty
+            ? null
+            : _bioController.text.trim(),
         'location': _selectedLocation,
-        'phoneNumber': _phoneController.text.trim().isEmpty ? null : _phoneController. text.trim(),
+        'phoneNumber': _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
         'profileImageUrl': profileImageUrl,
       });
 
       // Update Firebase Auth display name
-      await _authService. currentUser?.updateDisplayName(_nameController.text.trim());
+      await _authService.currentUser
+          ?.updateDisplayName(_nameController.text.trim());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,8 +377,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:  Text('Error:  $e'),
-            backgroundColor: Colors. red,
+            content: Text('Error:  $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -188,7 +397,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon:  const Icon(Icons.close, color: Colors.black87),
+          icon: const Icon(Icons.close, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -202,7 +411,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onPressed: _isLoading ? null : _saveProfile,
               child: _isLoading
                   ? const SizedBox(
-                      width:  20,
+                      width: 20,
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
@@ -229,21 +438,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.grey[200],
-                    backgroundImage: _selectedImage != null
-                        ? FileImage(_selectedImage!) as ImageProvider
-                        : widget.user.profileImageUrl != null
-                            ? NetworkImage(widget.user.profileImageUrl!) as ImageProvider
-                            : null,
-                    child: _selectedImage == null && widget.user.profileImageUrl == null
+                    backgroundImage: kIsWeb && _profileImageBytes != null
+                        ? MemoryImage(_profileImageBytes!) as ImageProvider
+                        : _selectedImage != null
+                            ? FileImage(_selectedImage!) as ImageProvider
+                            : widget.user.profileImageUrl != null
+                                ? NetworkImage(widget.user.profileImageUrl!)
+                                    as ImageProvider
+                                : null,
+                    child: _selectedImage == null &&
+                            _profileImageBytes == null &&
+                            widget.user.profileImageUrl == null
                         ? Icon(Icons.person, size: 60, color: Colors.grey[400])
                         : null,
                   ),
                   Positioned(
-                    bottom:  0,
+                    bottom: 0,
                     right: 0,
                     child: GestureDetector(
-                      onTap: _pickImage,
-                      child:  Container(
+                      onTap: _pickProfileImage,
+                      child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
@@ -268,10 +482,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText:  'Name',
+                labelText: 'Name',
                 prefixIcon: const Icon(Icons.person_outline),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius. circular(12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               validator: (value) {
@@ -292,7 +506,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               decoration: InputDecoration(
                 labelText: 'Bio',
                 hintText: 'Tell others about yourself.. .',
-                prefixIcon: const Icon(Icons. edit_outlined),
+                prefixIcon: const Icon(Icons.edit_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -342,9 +556,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               decoration: BoxDecoration(
                 color: Colors.blue[50],
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[100]! ),
+                border: Border.all(color: Colors.blue[100]!),
               ),
-              child:  Row(
+              child: Row(
                 children: [
                   Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
                   const SizedBox(width: 12),
@@ -352,7 +566,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: Text(
                       'Your profile helps renters learn more about you! ',
                       style: TextStyle(
-                        color: Colors. blue[900],
+                        color: Colors.blue[900],
                         fontSize: 14,
                       ),
                     ),

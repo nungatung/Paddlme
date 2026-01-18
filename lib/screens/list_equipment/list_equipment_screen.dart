@@ -9,13 +9,13 @@ import '../../services/equipment_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
-import '../../services/location_service.dart';
+
 import '../../widgets/location_picker.dart';
 import '../main_navigation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ListEquipmentScreen extends StatefulWidget {
-  const ListEquipmentScreen({super. key});
+  const ListEquipmentScreen({super.key});
 
   @override
   State<ListEquipmentScreen> createState() => _ListEquipmentScreenState();
@@ -24,7 +24,7 @@ class ListEquipmentScreen extends StatefulWidget {
 class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
   int _currentStep = 0;
   final _formKey = GlobalKey<FormState>();
-  
+
   // Services
   final _equipmentService = EquipmentService();
   final _storageService = StorageService();
@@ -32,18 +32,18 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
   final _userService = UserService();
 
   // Form data
-  EquipmentCategory?  _selectedType;  // ✅ Changed from EquipmentType
+  EquipmentCategory? _selectedType; // ✅ Changed from EquipmentType
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _pricePerHourController = TextEditingController();  // ✅ Renamed
-  String? _selectedLocation;  // ✅ Changed
+  final _pricePerHourController = TextEditingController(); // ✅ Renamed
+  String? _selectedLocation; // ✅ Changed
   final _beachController = TextEditingController();
-  
+
   // Image handling
-  final List<File> _selectedImages = [];  // ✅ Changed to File list
-  final List<String> _photoUrls = [];  // Keep for preview
-  final List<Uint8List> _selectedImageBytes = [];  // For web
-  
+  final List<File> _selectedImages = []; // ✅ Changed to File list
+  final List<String> _photoUrls = []; // Keep for preview
+  final List<Uint8List> _selectedImageBytes = []; // For web
+
   final List<String> _includedItems = [];
   final _newItemController = TextEditingController();
 
@@ -58,10 +58,6 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
   final _deliveryFeeController = TextEditingController();
   final _deliveryRadiusController = TextEditingController();
 
-
-  
-  
-  
   @override
   void dispose() {
     _titleController.dispose();
@@ -73,54 +69,53 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
     super.dispose();
   }
 
-  
   void _nextStep() {
-  // Step 0: Type selection
-  if (_currentStep == 0 && _selectedType == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select equipment type'),
-        backgroundColor: AppColors.error,
-      ),
-    );
-    return;
-  }
+    // Step 0: Type selection
+    if (_currentStep == 0 && _selectedType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select equipment type'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
-  // Step 1: Basic details validation
-  if (_currentStep == 1 && ! _formKey.currentState!.validate()) {
-    return;
-  }
+    // Step 1: Basic details validation
+    if (_currentStep == 1 && !_formKey.currentState!.validate()) {
+      return;
+    }
 
-  // Step 2: Photo upload validation
-  if (_currentStep == 2 && _photoUrls.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please add at least one photo'),
-        backgroundColor: AppColors.error,
-      ),
-    );
-    return;
-  }
+    // Step 2: Photo upload validation
+    if (_currentStep == 2 && _photoUrls.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please add at least one photo'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
-  // Step 3: Pricing validation
-  if (_currentStep == 3 && !_formKey.currentState!.validate()) {
-    return;
-  }
+    // Step 3: Pricing validation
+    if (_currentStep == 3 && !_formKey.currentState!.validate()) {
+      return;
+    }
 
-  // Step 6: Location validation
-  if (_currentStep == 6 && !_formKey.currentState!.validate()) { 
-    return;
-  }
+    // Step 6: Location validation
+    if (_currentStep == 6 && !_formKey.currentState!.validate()) {
+      return;
+    }
 
-  // Step 7: Review - final step
-  if (_currentStep < 7) {  
-    setState(() {
-      _currentStep++;
-    });
-  } else {
-    _publishListing();
+    // Step 7: Review - final step
+    if (_currentStep < 7) {
+      setState(() {
+        _currentStep++;
+      });
+    } else {
+      _publishListing();
+    }
   }
-}
 
   void _previousStep() {
     if (_currentStep > 0) {
@@ -138,7 +133,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
       maxHeight: 1024,
       imageQuality: 85,
     );
-    
+
     if (image != null) {
       if (kIsWeb) {
         // For web:  store bytes
@@ -185,14 +180,15 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount:  2,
+            crossAxisCount: 2,
             crossAxisSpacing: 16,
-            mainAxisSpacing:  16,
+            mainAxisSpacing: 16,
             childAspectRatio: 1,
           ),
-          itemCount:  _photoUrls.length + 1,  // ✅ FIXED:  Use _photoUrls instead
+          itemCount: _photoUrls.length + 1, // ✅ FIXED:  Use _photoUrls instead
           itemBuilder: (context, index) {
-            if (index == _photoUrls.length) {  // ✅ FIXED
+            if (index == _photoUrls.length) {
+              // ✅ FIXED
               // Add photo button
               return InkWell(
                 onTap: _pickImage,
@@ -207,13 +203,13 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child:  Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color:  AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -243,7 +239,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: kIsWeb
-                      ? Image. memory(
+                      ? Image.memory(
                           _selectedImageBytes[index],
                           width: double.infinity,
                           height: double.infinity,
@@ -265,17 +261,22 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
                       onPressed: () {
                         setState(() {
                           if (kIsWeb) {
-                            _selectedImageBytes.removeAt(index);  // ✅ Remove from bytes
+                            _selectedImageBytes
+                                .removeAt(index); // ✅ Remove from bytes
                           } else {
-                            _selectedImages.removeAt(index);  // ✅ Remove from files
+                            _selectedImages
+                                .removeAt(index); // ✅ Remove from files
                           }
-                          _photoUrls.removeAt(index);  // ✅ Always remove from URLs
+                          _photoUrls
+                              .removeAt(index); // ✅ Always remove from URLs
                         });
-                        debugPrint('✅ Image removed. Total: ${_photoUrls.length}');
+                        debugPrint(
+                            '✅ Image removed. Total: ${_photoUrls.length}');
                       },
                     ),
                   ),
@@ -285,7 +286,8 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
                     bottom: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(8),
@@ -305,7 +307,8 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
           },
         ),
 
-        if (_photoUrls.isNotEmpty) ...[  // ✅ FIXED:  Use _photoUrls
+        if (_photoUrls.isNotEmpty) ...[
+          // ✅ FIXED:  Use _photoUrls
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
@@ -315,7 +318,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
               border: Border.all(color: Colors.blue[100]!),
             ),
             child: Row(
-              children:  [
+              children: [
                 Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
                 const SizedBox(width: 12),
                 Expanded(
@@ -323,7 +326,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
                     'The first photo will be your cover image',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors. blue[900],
+                      color: Colors.blue[900],
                     ),
                   ),
                 ),
@@ -335,186 +338,188 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
     );
   }
 
-Future<void> _publishListing() async {
-  // Validate location is selected
-  if (_selectedLocation == null || _selectedLocation! .isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select a location'),
-        backgroundColor: AppColors.error,
+  Future<void> _publishListing() async {
+    // Validate location is selected
+    if (_selectedLocation == null || _selectedLocation!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a location'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      setState(() => _currentStep = 5); // Go back to location step
+      return;
+    }
+
+    setState(() => _isPublishing = true);
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+            SizedBox(height: 16),
+            Text('Publishing your listing...'),
+          ],
+        ),
       ),
     );
-    setState(() => _currentStep = 5); // Go back to location step
-    return;
-  }
 
-  setState(() => _isPublishing = true);
-
-  // Show loading dialog
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const AlertDialog(
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-          SizedBox(height: 16),
-          Text('Publishing your listing...'),
-        ],
-      ),
-    ),
-  );
-
-  try {
-    // Get current user
-    final currentUser = _authService.currentUser;
-    if (currentUser == null) {
-      throw Exception('You must be logged in to create a listing');
-    }
-
-    // Get user data
-    final userData = await _userService.getUserByUid(currentUser.uid);
-    if (userData == null) {
-      throw Exception('User data not found');
-    }
-
-    // Step 1: Upload images to Firebase Storage
-  List<String> uploadedImageUrls = [];
-
-  if (_photoUrls.isNotEmpty) {  // ✅ Check _photoUrls
     try {
-      final tempId = DateTime.now().millisecondsSinceEpoch. toString();
-      
-      if (kIsWeb) {
-        // ✅ For web: upload bytes
-        uploadedImageUrls = await _storageService.uploadEquipmentImagesWeb(
-          tempId,
-          _selectedImageBytes,
-        );
-      } else {
-        // ✅ For mobile:  upload files
-        uploadedImageUrls = await _storageService.uploadEquipmentImages(
-          tempId,
-          _selectedImages,
-        );
+      // Get current user
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        throw Exception('You must be logged in to create a listing');
       }
-    } catch (e) {
-      debugPrint('Storage upload failed: $e');
-      uploadedImageUrls = [
-        'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
-      ];
-    }
-  }
 
-    // Step 2: Create equipment model
-    final equipment = EquipmentModel(
-      id: '', // Will be set by Firestore
-      ownerId: currentUser.uid,
-      ownerName: userData.name,
-      ownerImageUrl: userData.profileImageUrl,
-      title: _titleController.text. trim(),
-      description: _descriptionController.text.trim(),
-      category: _selectedType! ,
-      pricePerHour: double.parse(_pricePerHourController.text),
-      imageUrls: uploadedImageUrls,
-      location: _selectedLocation!,
-      latitude: null, // Can add coordinates later
-      longitude: null,
-      isAvailable: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      features: _includedItems,
-      capacity: 1, // Can make this customizable later
-      offersDelivery: _offersDelivery,
-      deliveryFee: _offersDelivery && _deliveryFeeController.text.isNotEmpty
-          ? double.parse(_deliveryFeeController.text)
-          : null,
-      deliveryRadius: _offersDelivery && _deliveryRadiusController.text.isNotEmpty
-          ? double.parse(_deliveryRadiusController. text)
-          : null,
-      requiresPickup: _requiresPickup,
-    );
+      // Get user data
+      final userData = await _userService.getUserByUid(currentUser.uid);
+      if (userData == null) {
+        throw Exception('User data not found');
+      }
 
-    // Step 3: Save to Firestore
-    final equipmentId = await _equipmentService.createEquipment(equipment);
+      // Step 1: Upload images to Firebase Storage
+      List<String> uploadedImageUrls = [];
 
-    debugPrint('✅ Equipment created with ID: $equipmentId');
+      if (_photoUrls.isNotEmpty) {
+        // ✅ Check _photoUrls
+        try {
+          final tempId = DateTime.now().millisecondsSinceEpoch.toString();
 
-    // Close loading dialog
-    if (mounted) {
-      Navigator.pop(context);
-    }
+          if (kIsWeb) {
+            // ✅ For web: upload bytes
+            uploadedImageUrls = await _storageService.uploadEquipmentImagesWeb(
+              tempId,
+              _selectedImageBytes,
+            );
+          } else {
+            // ✅ For mobile:  upload files
+            uploadedImageUrls = await _storageService.uploadEquipmentImages(
+              tempId,
+              _selectedImages,
+            );
+          }
+        } catch (e) {
+          debugPrint('Storage upload failed: $e');
+          uploadedImageUrls = [
+            'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
+          ];
+        }
+      }
 
-    // Step 4: Show success dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
-                  shape: BoxShape.circle,
+      // Step 2: Create equipment model
+      final equipment = EquipmentModel(
+        id: '', // Will be set by Firestore
+        ownerId: currentUser.uid,
+        ownerName: userData.name,
+        ownerImageUrl: userData.profileImageUrl, 
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        category: _selectedType!,
+        pricePerHour: double.parse(_pricePerHourController.text),
+        imageUrls: uploadedImageUrls,
+        location: _selectedLocation!,
+        latitude: null, // Can add coordinates later
+        longitude: null,
+        isAvailable: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        features: _includedItems,
+        capacity: 1, // Can make this customizable later
+        offersDelivery: _offersDelivery,
+        deliveryFee: _offersDelivery && _deliveryFeeController.text.isNotEmpty
+            ? double.parse(_deliveryFeeController.text)
+            : null,
+        deliveryRadius:
+            _offersDelivery && _deliveryRadiusController.text.isNotEmpty
+                ? double.parse(_deliveryRadiusController.text)
+                : null,
+        requiresPickup: _requiresPickup,
+      );
+
+      // Step 3: Save to Firestore
+      final equipmentId = await _equipmentService.createEquipment(equipment);
+
+      debugPrint('✅ Equipment created with ID: $equipmentId');
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      // Step 4: Show success dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: AppColors.success,
+                    size: 32,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: AppColors. success,
-                  size: 32,
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text('Listing Published! '),
                 ),
-              ),
-              const SizedBox(width:  16),
-              const Expanded(
-                child: Text('Listing Published! '),
+              ],
+            ),
+            content: const Text(
+              'Your equipment is now available for rent.  You\'ll receive notifications when someone books it.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const MainNavigation()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Done'),
               ),
             ],
           ),
-          content: const Text(
-            'Your equipment is now available for rent.  You\'ll receive notifications when someone books it.',
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
           ),
-          actions: [
-            TextButton(
-              onPressed:  () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const MainNavigation()),
-                  (route) => false,
-                );
-              },
-              child: const Text('Done'),
-            ),
-          ],
-        ),
-      );
-    }
-  } catch (e) {
-    // Close loading dialog
-    if (mounted) {
-      Navigator.pop(context);
-    }
+        );
+      }
 
-    // Show error
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
-
-    debugPrint('❌ Error publishing listing: $e');
-  } finally {
-    if (mounted) {
-      setState(() => _isPublishing = false);
+      debugPrint('❌ Error publishing listing: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isPublishing = false);
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -541,11 +546,13 @@ Future<void> _publishListing() async {
             child: Column(
               children: [
                 Row(
-                  children: List.generate(8, (index) {  // ✅ Changed from 7 to 8
+                  children: List.generate(8, (index) {
+                    // ✅ Changed from 7 to 8
                     return Expanded(
                       child: Container(
                         height: 4,
-                        margin: EdgeInsets.only(right: index < 7 ? 8 :  0),  // ✅ Changed
+                        margin: EdgeInsets.only(
+                            right: index < 7 ? 8 : 0), // ✅ Changed
                         decoration: BoxDecoration(
                           color: index <= _currentStep
                               ? AppColors.primary
@@ -558,8 +565,8 @@ Future<void> _publishListing() async {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Step ${_currentStep + 1} of 8',  // ✅ Changed from 7 to 8
-                  style:  TextStyle(
+                  'Step ${_currentStep + 1} of 8', // ✅ Changed from 7 to 8
+                  style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -581,11 +588,11 @@ Future<void> _publishListing() async {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors. white,
+              color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
-                  blurRadius:  10,
+                  blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
               ],
@@ -599,7 +606,7 @@ Future<void> _publishListing() async {
                         onPressed: _previousStep,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 56),
-                          side: BorderSide(color: Colors.grey[300]! ),
+                          side: BorderSide(color: Colors.grey[300]!),
                         ),
                         child: const Text('Back'),
                       ),
@@ -609,7 +616,7 @@ Future<void> _publishListing() async {
                     flex: 2,
                     child: ElevatedButton(
                       onPressed: _nextStep,
-                      style: ElevatedButton. styleFrom(
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(0, 56),
@@ -642,14 +649,14 @@ Future<void> _publishListing() async {
         return _buildPhotoUpload();
       case 3:
         return _buildPricing();
-      case 4: 
+      case 4:
         return _buildDeliveryOptions(); // New
       case 5:
-        return _buildAvailability();  
+        return _buildAvailability();
       case 6:
-        return _buildLocation();      
+        return _buildLocation();
       case 7:
-        return _buildReview();        
+        return _buildReview();
       default:
         return Container();
     }
@@ -676,7 +683,6 @@ Future<void> _publishListing() async {
           ),
         ),
         const SizedBox(height: 32),
-        
         _buildTypeCard(
           EquipmentCategory.kayak,
           Icons.kayaking,
@@ -715,7 +721,8 @@ Future<void> _publishListing() async {
     );
   }
 
-  Widget _buildTypeCard(EquipmentCategory type, IconData icon, String title, String subtitle) {
+  Widget _buildTypeCard(
+      EquipmentCategory type, IconData icon, String title, String subtitle) {
     final isSelected = _selectedType == type;
 
     return InkWell(
@@ -726,7 +733,7 @@ Future<void> _publishListing() async {
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets. all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(
@@ -741,24 +748,24 @@ Future<void> _publishListing() async {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.primary. withOpacity(0.1)
+                    ? AppColors.primary.withOpacity(0.1)
                     : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
                 size: 32,
-                color: isSelected ?  AppColors.primary :  Colors.grey[600],
+                color: isSelected ? AppColors.primary : Colors.grey[600],
               ),
             ),
-            const SizedBox(width:  16),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style:  TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: isSelected ? AppColors.primary : Colors.black87,
@@ -797,7 +804,7 @@ Future<void> _publishListing() async {
           const Text(
             'Tell us about your equipment',
             style: TextStyle(
-              fontSize:  24,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -809,7 +816,7 @@ Future<void> _publishListing() async {
               color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height:  32),
+          const SizedBox(height: 32),
 
           // Title
           const Text(
@@ -823,12 +830,13 @@ Future<void> _publishListing() async {
           TextFormField(
             controller: _titleController,
             decoration: InputDecoration(
-              hintText: 'e.g.  Ocean Kayak Scrambler - Perfect for Bay Exploring',
+              hintText:
+                  'e.g.  Ocean Kayak Scrambler - Perfect for Bay Exploring',
               filled: true,
-              fillColor:  Colors.white,
+              fillColor: Colors.white,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius. circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]! ),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -846,7 +854,7 @@ Future<void> _publishListing() async {
             },
           ),
 
-          const SizedBox(height:  24),
+          const SizedBox(height: 24),
 
           // Description
           const Text(
@@ -861,7 +869,8 @@ Future<void> _publishListing() async {
             controller: _descriptionController,
             maxLines: 6,
             decoration: InputDecoration(
-              hintText: 'Describe your equipment, its condition, and what makes it special.. .',
+              hintText:
+                  'Describe your equipment, its condition, and what makes it special.. .',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -884,14 +893,14 @@ Future<void> _publishListing() async {
             },
           ),
 
-          const SizedBox(height:  24),
+          const SizedBox(height: 24),
 
           // What's Included
           const Text(
             "What's Included",
             style: TextStyle(
-              fontSize:  16,
-              fontWeight:  FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
@@ -909,19 +918,21 @@ Future<void> _publishListing() async {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors. white,
-                  borderRadius:  BorderRadius.circular(12),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[300]!),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: AppColors. success, size: 20),
+                    const Icon(Icons.check_circle,
+                        color: AppColors.success, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(item),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, size: 20, color: Colors.grey[600]),
+                      icon:
+                          Icon(Icons.close, size: 20, color: Colors.grey[600]),
                       onPressed: () {
                         setState(() {
                           _includedItems.remove(item);
@@ -938,13 +949,13 @@ Future<void> _publishListing() async {
               Expanded(
                 child: TextField(
                   controller: _newItemController,
-                  decoration:  InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'e.g. Life jacket',
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:  BorderSide(color: Colors. grey[300]!),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -966,14 +977,14 @@ Future<void> _publishListing() async {
                 onPressed: () {
                   if (_newItemController.text.trim().isNotEmpty) {
                     setState(() {
-                      _includedItems.add(_newItemController. text.trim());
+                      _includedItems.add(_newItemController.text.trim());
                       _newItemController.clear();
                     });
                   }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors. white,
+                  foregroundColor: Colors.white,
                   minimumSize: const Size(56, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -989,7 +1000,6 @@ Future<void> _publishListing() async {
   }
 
   // Step 3: Photo Upload - removed duplicate, using the one at line 131
-
 
   // Step 4:  Pricing
   Widget _buildPricing() {
@@ -1033,15 +1043,15 @@ Future<void> _publishListing() async {
             decoration: InputDecoration(
               hintText: '35',
               filled: true,
-              fillColor:  Colors.white,
+              fillColor: Colors.white,
               prefixText: 'NZ\$: ',
               prefixStyle: const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w600,    
+                fontWeight: FontWeight.w600,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius. circular(12),
-                borderSide: BorderSide(color:  Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1053,7 +1063,7 @@ Future<void> _publishListing() async {
               fontWeight: FontWeight.w600,
             ),
             validator: (value) {
-              if (value == null || value. isEmpty) {
+              if (value == null || value.isEmpty) {
                 return 'Please enter a price';
               }
               final price = int.tryParse(value);
@@ -1064,14 +1074,14 @@ Future<void> _publishListing() async {
             },
           ),
 
-          const SizedBox(height:  32),
+          const SizedBox(height: 32),
 
           // Pricing suggestions
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.green[50],
-              borderRadius:  BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.green[100]!),
             ),
             child: Column(
@@ -1092,13 +1102,16 @@ Future<void> _publishListing() async {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _buildTip('Similar kayaks rent for \$30-45/hour'),
-
+                _buildTip('Single kayaks generally rent for \$30-40/hour'),
+                _buildTip('Double kayaks generally rent for \$40-50/hour'),
+                _buildTip(
+                    'Stand-up Paddle Boards generally rent for \$30-35/hour'),
+                _buildTip('Jet Skis generally rent for \$160-200/hour'),
               ],
             ),
           ),
 
-          const SizedBox(height:  24),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -1125,246 +1138,244 @@ Future<void> _publishListing() async {
     );
   }
 
-
   // Step 5: Delivery Options
-Widget _buildDeliveryOptions() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Delivery Options',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        'How will renters get your equipment?',
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.grey[600],
-        ),
-      ),
-      const SizedBox(height: 32),
-
-      // Pickup Option
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]! ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Allow Pickup',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight:  FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Renters can collect equipment from you',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors. grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Switch(
-              value: _requiresPickup,
-              onChanged: (value) {
-                setState(() => _requiresPickup = value);
-              },
-              activeColor: AppColors.primary,
-            ),
-          ],
-        ),
-      ),
-
-      const SizedBox(height: 16),
-
-      // Delivery Option
-      Container(
-        padding:  const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Offer Delivery',
-                    style:  TextStyle(
-                      fontSize:  16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'You can deliver equipment to renters',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Switch(
-              value:  _offersDelivery,
-              onChanged: (value) {
-                setState(() => _offersDelivery = value);
-              },
-              activeColor: AppColors.primary,
-            ),
-          ],
-        ),
-      ),
-
-      // Delivery Details (show only if delivery is enabled)
-      if (_offersDelivery) ...[
-        const SizedBox(height: 24),
-
-        // Delivery Fee
+  Widget _buildDeliveryOptions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         const Text(
-          'Delivery Fee (NZD)',
+          'Delivery Options',
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight. w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _deliveryFeeController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          decoration: InputDecoration(
-            hintText: '20',
-            filled: true,
-            fillColor:  Colors.white,
-            prefixText: 'NZ\$ ',
-            prefixStyle: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
-            helperText: 'One-time fee for delivery and pickup',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius. circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-          ),
-          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-
-        const SizedBox(height: 24),
-
-        // Delivery Radius
-        const Text(
-          'Delivery Radius (km)',
+        const SizedBox(height: 8),
+        Text(
+          'How will renters get your equipment?',
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
           ),
         ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _deliveryRadiusController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter. digitsOnly,
-          ],
-          decoration: InputDecoration(
-            hintText: '10',
-            filled: true,
-            fillColor: Colors.white,
-            suffixText: 'km',
-            suffixStyle: TextStyle(
+        const SizedBox(height: 32),
+
+        // Pickup Option
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Allow Pickup',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Renters can collect equipment from you',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _requiresPickup,
+                onChanged: (value) {
+                  setState(() => _requiresPickup = value);
+                },
+                activeColor: AppColors.primary,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Delivery Option
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Offer Delivery',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'You can deliver equipment to renters',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _offersDelivery,
+                onChanged: (value) {
+                  setState(() => _offersDelivery = value);
+                },
+                activeColor: AppColors.primary,
+              ),
+            ],
+          ),
+        ),
+
+        // Delivery Details (show only if delivery is enabled)
+        if (_offersDelivery) ...[
+          const SizedBox(height: 24),
+
+          // Delivery Fee
+          const Text(
+            'Delivery Fee (NZD)',
+            style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[600],
-            ),
-            helperText: 'Maximum distance you\'ll deliver',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              fontWeight: FontWeight.w600,
             ),
           ),
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _deliveryFeeController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            decoration: InputDecoration(
+              hintText: '20',
+              filled: true,
+              fillColor: Colors.white,
+              prefixText: 'NZ\$ ',
+              prefixStyle: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              helperText: 'One-time fee for delivery and pickup',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Delivery Radius
+          const Text(
+            'Delivery Radius (km)',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _deliveryRadiusController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            decoration: InputDecoration(
+              hintText: '10',
+              filled: true,
+              fillColor: Colors.white,
+              suffixText: 'km',
+              suffixStyle: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+              helperText: 'Maximum distance you\'ll deliver',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+            ),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 24),
+
+        // Info box
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue[100]!),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Delivery Tips',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[900],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '• Offering delivery can increase bookings\n'
+                      '• Set a fair fee to cover your time and fuel\n'
+                      '• You can update these options anytime',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[800],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
 
-      const SizedBox(height:  24),
-
-      // Info box
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue[100]!),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Delivery Tips',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue[900],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '• Offering delivery can increase bookings\n'
-                    '• Set a fair fee to cover your time and fuel\n'
-                    '• You can update these options anytime',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.blue[800],
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-  
   // Step 6: Availability Calendar
   Widget _buildAvailability() {
     return Column(
@@ -1379,7 +1390,7 @@ Widget _buildDeliveryOptions() {
         ),
         const SizedBox(height: 8),
         Text(
-          'Mark dates when your equipment is NOT available',
+          'Mark dates when your equipment is not available',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[600],
@@ -1393,7 +1404,7 @@ Widget _buildDeliveryOptions() {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]! ),
+            border: Border.all(color: Colors.grey[300]!),
           ),
           child: Row(
             children: [
@@ -1413,7 +1424,7 @@ Widget _buildDeliveryOptions() {
                       'Your equipment is always available',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors. grey[600],
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
@@ -1444,7 +1455,7 @@ Widget _buildDeliveryOptions() {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border. all(color: Colors.grey[300]!),
+              border: Border.all(color: Colors.grey[300]!),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1467,23 +1478,26 @@ Widget _buildDeliveryOptions() {
                 const SizedBox(height: 16),
                 TableCalendar(
                   firstDay: DateTime.now(),
-                  lastDay: DateTime. now().add(const Duration(days: 365)),
+                  lastDay: DateTime.now().add(const Duration(days: 365)),
                   focusedDay: _focusedDay,
                   selectedDayPredicate: (day) {
                     return _unavailableDates.any((d) => isSameDay(d, day));
                   },
                   onDaySelected: (selectedDay, focusedDay) {
-                    if (selectedDay. isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+                    if (selectedDay.isBefore(
+                        DateTime.now().subtract(const Duration(days: 1)))) {
                       return;
                     }
-                    
+
                     setState(() {
                       _focusedDay = focusedDay;
-                      
-                      if (_unavailableDates.any((d) => isSameDay(d, selectedDay))) {
-                        _unavailableDates.removeWhere((d) => isSameDay(d, selectedDay));
+
+                      if (_unavailableDates
+                          .any((d) => isSameDay(d, selectedDay))) {
+                        _unavailableDates
+                            .removeWhere((d) => isSameDay(d, selectedDay));
                       } else {
-                        _unavailableDates. add(selectedDay);
+                        _unavailableDates.add(selectedDay);
                       }
                     });
                   },
@@ -1493,8 +1507,8 @@ Widget _buildDeliveryOptions() {
                       shape: BoxShape.circle,
                     ),
                     todayDecoration: BoxDecoration(
-                      color:  AppColors.primary. withOpacity(0.3),
-                      shape: BoxShape. circle,
+                      color: AppColors.primary.withOpacity(0.3),
+                      shape: BoxShape.circle,
                     ),
                     outsideDaysVisible: false,
                   ),
@@ -1511,7 +1525,8 @@ Widget _buildDeliveryOptions() {
                 // Legend
                 Row(
                   children: [
-                    _buildLegendItem(AppColors.primary. withOpacity(0.3), 'Today'),
+                    _buildLegendItem(
+                        AppColors.primary.withOpacity(0.3), 'Today'),
                     const SizedBox(width: 16),
                     _buildLegendItem(AppColors.error, 'Unavailable'),
                   ],
@@ -1535,7 +1550,7 @@ Widget _buildDeliveryOptions() {
 
           // Info box
           Container(
-            padding:  const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.blue[50],
               borderRadius: BorderRadius.circular(12),
@@ -1563,7 +1578,7 @@ Widget _buildDeliveryOptions() {
                         'Manage your calendar from your profile after publishing',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors. blue[800],
+                          color: Colors.blue[800],
                         ),
                       ),
                     ],
@@ -1575,7 +1590,7 @@ Widget _buildDeliveryOptions() {
         ],
 
         // Quick unavailability options
-        if (! _availableAllDays) ...[
+        if (!_availableAllDays) ...[
           const SizedBox(height: 24),
           const Text(
             'Quick Actions',
@@ -1594,7 +1609,8 @@ Widget _buildDeliveryOptions() {
                 () {
                   setState(() {
                     for (int i = 0; i < 7; i++) {
-                      _unavailableDates.add(DateTime.now().add(Duration(days: i)));
+                      _unavailableDates
+                          .add(DateTime.now().add(Duration(days: i)));
                     }
                   });
                 },
@@ -1605,7 +1621,8 @@ Widget _buildDeliveryOptions() {
                   setState(() {
                     for (int i = 0; i < 60; i++) {
                       final date = DateTime.now().add(Duration(days: i));
-                      if (date.weekday == DateTime.saturday || date.weekday == DateTime. sunday) {
+                      if (date.weekday == DateTime.saturday ||
+                          date.weekday == DateTime.sunday) {
                         _unavailableDates.add(date);
                       }
                     }
@@ -1632,16 +1649,16 @@ Widget _buildDeliveryOptions() {
       children: [
         Container(
           width: 16,
-          height:  16,
+          height: 16,
           decoration: BoxDecoration(
             color: color,
-            shape: BoxShape. circle,
+            shape: BoxShape.circle,
           ),
         ),
         const SizedBox(width: 8),
         Text(
           label,
-          style:  TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: Colors.grey[600],
           ),
@@ -1655,25 +1672,24 @@ Widget _buildDeliveryOptions() {
       label: Text(label),
       onPressed: onTap,
       backgroundColor: Colors.white,
-      side: BorderSide(color: Colors.grey[300]! ),
+      side: BorderSide(color: Colors.grey[300]!),
       labelStyle: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w500,
       ),
     );
   }
-  
-  
- // Step 7: Location
+
+  // Step 7: Location
   Widget _buildLocation() {
     return Form(
-      key: _formKey,  // ✅ Add this Form wrapper
+      key: _formKey, // ✅ Add this Form wrapper
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Where are you located?',
-            style:  TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -1705,8 +1721,8 @@ Widget _buildDeliveryOptions() {
               fillColor: Colors.white,
               prefixIcon: const Icon(Icons.beach_access),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius. circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]! ),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1714,7 +1730,7 @@ Widget _buildDeliveryOptions() {
               ),
             ),
             validator: (value) {
-              if (value == null || value. isEmpty) {
+              if (value == null || value.isEmpty) {
                 return 'Please enter a location';
               }
               return null;
@@ -1734,7 +1750,7 @@ Widget _buildDeliveryOptions() {
           const SizedBox(height: 8),
           LocationPicker(
             selectedLocation: _selectedLocation,
-            onLocationSelected:  (location) {
+            onLocationSelected: (location) {
               setState(() => _selectedLocation = location);
             },
           ),
@@ -1750,14 +1766,15 @@ Widget _buildDeliveryOptions() {
             ),
             child: Row(
               children: [
-                Icon(Icons.privacy_tip_outlined, color: Colors.blue[700], size: 20),
+                Icon(Icons.privacy_tip_outlined,
+                    color: Colors.blue[700], size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Your exact address won\'t be shared until a booking is confirmed',
-                    style:  TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors. blue[900],
+                      color: Colors.blue[900],
                     ),
                   ),
                 ),
@@ -1769,9 +1786,9 @@ Widget _buildDeliveryOptions() {
     );
   }
 
- // Step 8: Review
+  // Step 8: Review
   Widget _buildReview() {
-    final String typeEmoji = _selectedType?.icon ?? '🌊';  // ✅ Use category icon
+    final String typeEmoji = _selectedType?.icon ?? '🌊'; // ✅ Use category icon
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1791,7 +1808,7 @@ Widget _buildDeliveryOptions() {
             color: Colors.grey[600],
           ),
         ),
-        const SizedBox(height:  32),
+        const SizedBox(height: 16),
 
         // Preview Card
         Container(
@@ -1804,12 +1821,13 @@ Widget _buildDeliveryOptions() {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image - show local file
-              if (_selectedImages. isNotEmpty)
+              if (_selectedImages.isNotEmpty)
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: kIsWeb  // ✅ Check if running on web
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: kIsWeb // ✅ Check if running on web
                       ? Image.network(
-                          _photoUrls. first,
+                          _photoUrls.first,
                           width: double.infinity,
                           height: 200,
                           fit: BoxFit.cover,
@@ -1831,7 +1849,7 @@ Widget _buildDeliveryOptions() {
                     Text(
                       _titleController.text,
                       style: const TextStyle(
-                        fontSize:  20,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1846,14 +1864,15 @@ Widget _buildDeliveryOptions() {
                           style: const TextStyle(fontSize: 16),
                         ),
                         const SizedBox(width: 8),
-                        Icon(Icons.location_on, size: 16, color: Colors. grey[600]),
+                        Icon(Icons.location_on,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             _beachController.text,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors. grey[600],
+                              color: Colors.grey[600],
                             ),
                           ),
                         ),
@@ -1920,7 +1939,7 @@ Widget _buildDeliveryOptions() {
                     ),
 
                     // ...  rest of your existing review content (included items, availability, etc.)
-                    
+
                     if (_includedItems.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       const Divider(),
@@ -1937,9 +1956,11 @@ Widget _buildDeliveryOptions() {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle, size: 18, color: AppColors.success),
+                                const Icon(Icons.check_circle,
+                                    size: 18, color: AppColors.success),
                                 const SizedBox(width: 12),
-                                Text(item, style: const TextStyle(fontSize: 14)),
+                                Text(item,
+                                    style: const TextStyle(fontSize: 14)),
                               ],
                             ),
                           )),
@@ -1960,11 +1981,12 @@ Widget _buildDeliveryOptions() {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 18, color: Colors.grey[600]),
+                          Icon(Icons.location_on,
+                              size: 18, color: Colors.grey[600]),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _selectedLocation! ,
+                              _selectedLocation!,
                               style: const TextStyle(fontSize: 14),
                             ),
                           ),
@@ -1973,8 +1995,9 @@ Widget _buildDeliveryOptions() {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.beach_access, size: 18, color: Colors.grey[600]),
-                          const SizedBox(width:  8),
+                          Icon(Icons.beach_access,
+                              size: 18, color: Colors.grey[600]),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _beachController.text,
@@ -1986,7 +2009,7 @@ Widget _buildDeliveryOptions() {
                     ],
 
                     // Availability info (your existing code)
-                    if (! _availableAllDays && _unavailableDates.isNotEmpty) ...[
+                    if (!_availableAllDays && _unavailableDates.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       const Divider(),
                       const SizedBox(height: 16),
@@ -2003,15 +2026,16 @@ Widget _buildDeliveryOptions() {
                         decoration: BoxDecoration(
                           color: Colors.orange[50],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border. all(color: Colors.orange[200]!),
+                          border: Border.all(color: Colors.orange[200]!),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.event_busy, size: 18, color: Colors.orange[700]),
+                            Icon(Icons.event_busy,
+                                size: 18, color: Colors.orange[700]),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '${_unavailableDates. length} unavailable date(s) set',
+                                '${_unavailableDates.length} unavailable date(s) set',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.orange[900],
@@ -2029,20 +2053,21 @@ Widget _buildDeliveryOptions() {
                         'Availability',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight:  FontWeight.w600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height:  12),
+                      const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.green[50],
-                          borderRadius:  BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.green[200]!),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, size: 18, color: Colors.green[700]),
+                            Icon(Icons.check_circle,
+                                size: 18, color: Colors.green[700]),
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(
@@ -2092,7 +2117,7 @@ Widget _buildDeliveryOptions() {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children:  [
+          children: [
             Text(text),
             const Icon(Icons.edit, size: 18),
           ],

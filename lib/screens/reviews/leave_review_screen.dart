@@ -8,7 +8,7 @@ class LeaveReviewScreen extends StatefulWidget {
 
   const LeaveReviewScreen({
     super.key,
-    required this. booking,
+    required this.booking,
   });
 
   @override
@@ -41,7 +41,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please write a review'),
-          backgroundColor: AppColors. error,
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -51,21 +51,19 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
       _isSubmitting = true;
     });
 
-    // Simulate API call
     await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {
-      // Show success dialog
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title:  Row(
+          title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors. success. withOpacity(0.1),
+                  color: AppColors.success.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -74,9 +72,9 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                   size: 32,
                 ),
               ),
-              const SizedBox(width:  16),
+              const SizedBox(width: 16),
               const Expanded(
-                child: Text('Review Posted! '),
+                child: Text('Review Posted!'),
               ),
             ],
           ),
@@ -85,7 +83,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
           ),
           actions: [
             TextButton(
-              onPressed:  () {
+              onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const MainNavigation()),
                   (route) => false,
@@ -117,7 +115,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Equipment Info
+                  // ✅ FIXED: Equipment Info Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -129,34 +127,65 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image. network(
-                            widget.booking. equipment.imageUrls. first,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
+                          child: widget.booking.equipment.imageUrls.isNotEmpty
+                              ? Image.network(
+                                  widget.booking.equipment.imageUrls.first,
+                                  width: 70,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 70,
+                                      height: 70,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.kayaking,
+                                        color: Colors.grey[600],
+                                        size: 32,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.kayaking,
+                                    color: AppColors.primary,
+                                    size: 32,
+                                  ),
+                                ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.booking. equipment.title,
+                                widget.booking.equipment.title,
                                 style: const TextStyle(
-                                  fontSize:  16,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height:  4),
+                              const SizedBox(height: 4),
                               Text(
                                 'Owned by ${widget.booking.equipment.ownerName}',
                                 style: TextStyle(
-                                  fontSize:  14,
+                                  fontSize: 13,
                                   color: Colors.grey[600],
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -167,53 +196,60 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Rating Section
+                  // ✅ FIXED: Rating Section with Responsive Stars
                   Container(
-                    padding: const EdgeInsets. all(24),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border. all(color: Colors.grey[300]!),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: Column(
                       children: [
                         const Text(
                           'How was your experience?',
-                          style:  TextStyle(
-                            fontSize:  20,
+                          style: TextStyle(
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(5, (index) {
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _rating = index + 1.0;
-                                });
-                              },
-                              child:  Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: Icon(
-                                  index < _rating
-                                      ? Icons.star
-                                      : Icons.star_border,
-                                  size: 48,
-                                  color: index < _rating
-                                      ?  AppColors.accent
-                                      : Colors.grey[400],
-                                ),
-                              ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final availableWidth = constraints.maxWidth;
+                            final starSize = (availableWidth / 7).clamp(32.0, 48.0);
+                            final spacing = (availableWidth / 35).clamp(4.0, 8.0);
+
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(5, (index) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _rating = index + 1.0;
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: spacing),
+                                    child: Icon(
+                                      index < _rating ? Icons.star : Icons.star_border,
+                                      size: starSize,
+                                      color: index < _rating
+                                          ? AppColors.accent
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                                );
+                              }),
                             );
-                          }),
+                          },
                         ),
                         const SizedBox(height: 16),
                         if (_rating > 0)
                           Text(
                             _getRatingText(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primary,
@@ -225,13 +261,13 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Comment Section
+                  // Comment Section (unchanged)
                   Container(
-                    padding: const EdgeInsets. all(24),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border:  Border.all(color: Colors. grey[300]!),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,12 +293,12 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                           maxLines: 6,
                           maxLength: 500,
                           decoration: InputDecoration(
-                            hintText: 'The equipment was in great condition and the owner was very helpful.. .',
+                            hintText: 'The equipment was in great condition and the owner was very helpful...',
                             filled: true,
                             fillColor: Colors.grey[100],
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide. none,
+                              borderSide: BorderSide.none,
                             ),
                           ),
                         ),
@@ -272,53 +308,21 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Tips
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue[100]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment:  CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.lightbulb_outline, color: Colors.blue[700], size: 20),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Review Tips',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue[900],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTip('Be specific about what you liked or didn\'t like'),
-                        _buildTip('Mention the equipment condition'),
-                        _buildTip('Comment on the owner\'s communication'),
-                        _buildTip('Be honest but respectful'),
-                      ],
-                    ),
-                  ),
+                  
                 ],
               ),
             ),
           ),
 
-          // Submit Button
+          // Submit Button (unchanged)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black. withOpacity(0.1),
-                  blurRadius:  10,
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
               ],
@@ -331,12 +335,12 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                   onPressed: _isSubmitting ? null : _submitReview,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor:  Colors.white,
-                    disabledBackgroundColor: Colors. grey[300],
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey[300],
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
-                          width:  24,
+                          width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
                             color: Colors.white,
@@ -369,7 +373,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
 
   Widget _buildTip(String text) {
     return Padding(
-      padding: const EdgeInsets. only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -377,7 +381,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
           Expanded(
             child: Text(
               text,
-              style:  TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: Colors.blue[800],
               ),

@@ -5,7 +5,7 @@ import '../core/theme/app_colors.dart';
 import '../screens/equipment/equipment_detail_screen.dart';
 import '../screens/reviews/leave_review_screen.dart';
 import '../screens/messages/chat_screen.dart';
-import '../models/message_model.dart';
+import '../services/messaging_service.dart';
 
 class BookingCard extends StatelessWidget {
   final Booking booking;
@@ -261,46 +261,82 @@ class BookingCard extends StatelessWidget {
                   ],
                 ),
 
-                // Action Buttons (only for upcoming bookings) - UPDATED
-                if (booking. isUpcoming) ...[
-                  const SizedBox(height:  16),
+                // Action Buttons (only for upcoming bookings)
+                if (booking.isUpcoming) ...[
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       // Contact Owner Button
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            // Create conversation and open chat
-                            final conversation = ChatConversation(
-                              id:  booking.equipment.ownerId,
-                              otherUserId:  booking.equipment.ownerId,
-                              otherUserName:  booking.equipment.ownerName,
-                              otherUserAvatarUrl: booking.equipment.ownerImageUrl ?? '',
-                              equipmentId: booking.equipment.id,
-                              equipmentTitle: booking.equipment.title,
-                              equipmentImageUrl:  booking.equipment.imageUrls. first,
-                            );
-                            
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(conversation: conversation),
-                              ),
-                            );
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            try {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+
+                              final messagingService = MessagingService();
+                              final conversationId = await messagingService.getOrCreateConversation(
+                                otherUserId: booking.equipment.ownerId,
+                                otherUserName: booking.equipment.ownerName,
+                                otherUserAvatarUrl: booking.equipment.ownerImageUrl,
+                                equipmentId: booking.equipment.id,
+                                equipmentTitle: booking.equipment.title,
+                                equipmentImageUrl: booking.equipment.imageUrls.isNotEmpty
+                                    ? booking.equipment.imageUrls.first
+                                    : null,
+                              );
+
+                              if (!context.mounted) return;
+
+                              Navigator.pop(context);
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatScreen(
+                                    conversationId: conversationId,
+                                    otherUserId: booking.equipment.ownerId,
+                                    otherUserName: booking.equipment.ownerName,
+                                    otherUserAvatarUrl: booking.equipment.ownerImageUrl,
+                                    equipmentTitle: booking.equipment.title,
+                                    equipmentImageUrl: booking.equipment.imageUrls.isNotEmpty
+                                        ? booking.equipment.imageUrls.first
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
                           },
+                          icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                          label: const Text(
+                            'Contact Owner',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
                             minimumSize: const Size(0, 48),
                             side: const BorderSide(color: AppColors.primary, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child:  const Text(
-                            'Contact Owner',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight. w600,
-                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -310,18 +346,18 @@ class BookingCard extends StatelessWidget {
                       
                       // Cancel Button
                       Expanded(
-                        child:  OutlinedButton(
+                        child: OutlinedButton(
                           onPressed: () {
                             _showCancelDialog(context);
                           },
                           style: OutlinedButton.styleFrom(
-                            minimumSize:  const Size(0, 48),
+                            minimumSize: const Size(0, 48),
                             side: BorderSide(color: Colors.grey[300]!, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child:  Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
                               fontSize: 15,

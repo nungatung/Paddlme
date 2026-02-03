@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/login_screen.dart';
 
@@ -8,6 +9,7 @@ class OnboardingScreen extends StatefulWidget {
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
+
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
@@ -201,11 +203,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _goToLogin() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
+  void _goToLogin() async {
+  // Mark onboarding as seen
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('hasSeenOnboarding', true);
+
+  if (!mounted) return;
+
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(builder: (_) => const LoginScreen()),
+  );
+}
 
   @override
   void dispose() {

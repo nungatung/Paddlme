@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-
 import '../../models/equipment_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/image_carousel.dart';
 import '../../widgets/review_card.dart';
-
 import '../booking/date_selection_screen.dart';
 import '../../services/auth_service.dart';
 import '../equipment/edit_equipment_screen.dart';
 import '../../services/favourites_service.dart';
 import '../../widgets/owner_profile_bottom_sheet.dart';
 import '../../services/equipment_service.dart';
+import '../messages/chat_screen.dart'; 
+import '../../services/messaging_service.dart'; 
 
 class EquipmentDetailScreen extends StatefulWidget {
   final EquipmentModel equipment;
@@ -30,6 +30,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
   final _authService = AuthService();
   final _favoritesService = FavoritesService();
   final _equipmentService = EquipmentService();
+  final _messagingService = MessagingService();
 
   // New
   final ScrollController _scrollController = ScrollController();
@@ -104,6 +105,91 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
       ),
     ];
   }
+
+  // ✅ ADD THIS METHOD
+  Future<void> _contactOwner() async {
+    final user = _authService.currentUser;
+    
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to contact the owner'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Don't allow messaging yourself
+    if (user.uid == widget.equipment.ownerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You cannot message yourself'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Get or create conversation
+      final conversationId = await _messagingService.getOrCreateConversation(
+        otherUserId: widget.equipment.ownerId,
+        otherUserName: widget.equipment.ownerName,
+        otherUserAvatarUrl: widget.equipment.ownerImageUrl,
+        equipmentId: widget.equipment.id,
+        equipmentTitle: widget.equipment.title,
+        equipmentImageUrl: widget.equipment.imageUrls.isNotEmpty
+            ? widget.equipment.imageUrls.first
+            : null,
+      );
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Navigate to chat
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversationId,
+            otherUserId: widget.equipment.ownerId,
+            otherUserName: widget.equipment.ownerName,
+            otherUserAvatarUrl: widget.equipment.ownerImageUrl,
+            equipmentTitle: widget.equipment.title,
+            equipmentImageUrl: widget.equipment.imageUrls.isNotEmpty
+                ? widget.equipment.imageUrls.first
+                : null,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        // Close loading dialog
+        Navigator.pop(context);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  
 
   @override
   void initState() {
@@ -445,83 +531,150 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     Container(
                       color: Colors.white,
                       padding: const EdgeInsets.all(20),
-                      child: Row(
+                      child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundImage: widget.equipment.ownerImageUrl !=
-                                    null
-                                ? NetworkImage(widget.equipment.ownerImageUrl!)
-                                : null,
-                            backgroundColor: Colors.grey[200],
-                            child: widget.equipment.ownerImageUrl == null
-                                ? const Icon(Icons.person, color: Colors.grey)
-                                : null,
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundImage: widget.equipment.ownerImageUrl != null
+                                    ? NetworkImage(widget.equipment.ownerImageUrl!)
+                                    : null,
+                                backgroundColor: Colors.grey[200],
+                                child: widget.equipment.ownerImageUrl == null
+                                    ? const Icon(Icons.person, color: Colors.grey)
+                                    : null,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Hosted by',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      widget.equipment.ownerName,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          
+                          // ✅ BUTTONS ROW (only if not owner)
+                          if (_authService.currentUser?.uid != widget.equipment.ownerId) ...[
+                            const SizedBox(height: 16),
+                            Row(
                               children: [
-                                const Text(
-                                  'Hosted by',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
+                                // Message Button
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: OutlinedButton.icon(
+                                      onPressed: _contactOwner,
+                                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                                      label: const Text('Message'),
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: AppColors.primary, width: 2),
+                                        foregroundColor: AppColors.primary,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  widget.equipment.ownerName,
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
+                                const SizedBox(width: 12),
+                                // View Profile Button
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        final ownerListings = await _equipmentService
+                                            .getEquipmentByOwner(widget.equipment.ownerId);
+
+                                        if (!mounted) return;
+
+                                        showModalBottomSheet(
+                                          context: context,
+                                          isScrollControlled: true,
+                                          backgroundColor: Colors.transparent,
+                                          builder: (context) => OwnerProfileBottomSheet(
+                                            ownerId: widget.equipment.ownerId,
+                                            ownerName: widget.equipment.ownerName,
+                                            ownerImageUrl: widget.equipment.ownerImageUrl,
+                                            location: widget.equipment.location,
+                                            bio: 'Passionate about water sports and sharing amazing equipment with the community. I\'ve been renting out my gear for over 3 years!',
+                                            ownerListings: ownerListings,
+                                            ownerReviews: _getOwnerReviews(),
+                                            rating: 4.9,
+                                            reviewCount: _getOwnerReviews().length,
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: const Text('View Profile'),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          OutlinedButton(
-                            onPressed: () async {
-                              // ✅ Get owner's other listings
-                              final ownerListings =
-                                  await _equipmentService.getEquipmentByOwner(
-                                      widget.equipment.ownerId);
-
-                              if (!mounted) return;
-
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => OwnerProfileBottomSheet(
-                                  ownerId: widget.equipment.ownerId,
-                                  ownerName: widget.equipment.ownerName,
-                                  ownerImageUrl: widget.equipment.ownerImageUrl,
-                                  location: widget.equipment.location,
-                                  bio:
-                                      'Passionate about water sports and sharing amazing equipment with the community. I\'ve been renting out my gear for over 3 years!',
-                                  ownerListings: ownerListings,
-                                  ownerReviews: _getOwnerReviews(),
-                                  rating: 4.9,
-                                  reviewCount: _getOwnerReviews().length,
+                          ]
+                          // ✅ If owner is viewing their own listing
+                          else ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.3),
                                 ),
-                              );
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.primary),
-                              foregroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'This is your listing',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: const Text('View Profile'),
-                          ),
+                          ],
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 8),
 
                     // Description
                     Container(

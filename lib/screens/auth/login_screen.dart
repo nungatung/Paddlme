@@ -82,10 +82,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center, 
                   children: [
                     // Title
                     const Text(
                       'Welcome to Paddlme! ',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -97,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const Text(
                       'Log in to continue',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors. white70,

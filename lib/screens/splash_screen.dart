@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../core/theme/app_colors.dart';
 import 'onboarding/onboarding_screen.dart';
+import 'auth/login_screen.dart';  
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart'; 
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve:  Curves.easeIn),
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
@@ -37,11 +39,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
     // Wave animation (continuous)
     _waveController = AnimationController(
-      duration:  const Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
       vsync: this,
-    )..repeat(); // Loops forever
+    )..repeat();
 
     _fadeController.forward();
+
   }
 
   @override
@@ -51,15 +54,22 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     super.dispose();
   }
 
-  void _navigateToOnboarding() {
+  // ✅ UPDATED: Manual navigation (if button is pressed)
+  void _navigateToOnboarding() async {
+    // Mark that user has seen onboarding
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenOnboarding', true);
+
+    if (!mounted) return;
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => const OnboardingScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
-          const end = Offset. zero;
+          const end = Offset.zero;
           const curve = Curves.easeInOut;
-          var tween = Tween(begin:  begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
           var offsetAnimation = animation.drive(tween);
           return SlideTransition(position: offsetAnimation, child: child);
         },
@@ -210,12 +220,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   ),
                 ),
 
-                // Bottom section with button
+                // Bottom section with buttons
                 FadeTransition(
-                  opacity:  _fadeAnimation,
-                  child:  Padding(
+                  opacity: _fadeAnimation,
+                  child: Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ?  60 : 32,
+                      horizontal: isTablet ? 60 : 32,
                       vertical: isTablet ? 60 : 40,
                     ),
                     child: Column(
@@ -225,7 +235,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           'Rent kayaks, SUP boards & more from Aotearoa locals',
                           style: TextStyle(
                             fontSize: isTablet ? 18 : 16,
-                            color: Colors. grey[600],
+                            color: Colors.grey[600],
                             fontWeight: FontWeight.w400,
                           ),
                           textAlign: TextAlign.center,
@@ -233,24 +243,24 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         
                         SizedBox(height: isTablet ? 32 : 24),
                         
-                        // Get Started Button
+                        // ✅ Get Started Button (Main CTA)
                         ElevatedButton(
                           onPressed: _navigateToOnboarding,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             elevation: 4,
-                            shadowColor: AppColors. primary.withOpacity(0.4),
+                            shadowColor: AppColors.primary.withOpacity(0.4),
                             padding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 60 : 40,  // ✅ Horizontal padding
-                              vertical: 16,                     // ✅ Vertical padding
+                              horizontal: isTablet ? 60 : 40,
+                              vertical: 16,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(100),
                             ),
                           ),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,  // ✅ Important!  Shrinks to fit content
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 'Get Started',
@@ -267,6 +277,27 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             ],
                           ),
                         ),
+                        
+                        SizedBox(height: isTablet ? 20 : 16),
+                        
+                        // ✅ Simple Text "Log In" Button
+                        TextButton(
+                          onPressed: _navigateToLogin,
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 10,
+                            ),
+                          ),
+                          child: Text(
+                            'Already have an account? Log In',
+                            style: TextStyle(
+                              fontSize: isTablet ? 14 : 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -278,7 +309,30 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       ),
     );
   }
-}
+
+  // ✅ NEW: Navigate directly to login
+  void _navigateToLogin() async {
+    // Mark that user has seen onboarding (they're skipping it)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenOnboarding', true);
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+
+  }
 
 // Custom Wave Painter - ✅ UPDATED FOR ALL SCREEN SIZES
 class WavePainter extends CustomPainter {
@@ -301,7 +355,7 @@ class WavePainter extends CustomPainter {
         colors: [
           AppColors.primaryLight,
           AppColors.primaryLight.withOpacity(0.7),
-          Colors.white. withOpacity(0.5),
+          Colors.white.withOpacity(0.5),
           Colors.white,
         ],
         stops: const [0.0, 0.25, 0.6, 1.0],

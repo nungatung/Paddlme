@@ -4,7 +4,7 @@ import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';  
 import 'firebase_options.dart';  
 import 'core/theme/app_theme.dart';
-import 'screens/splash_screen.dart';
+import 'screens/launch_screen.dart';
 
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +39,7 @@ class WaveShareApp extends StatelessWidget {
           locale:  DevicePreview.locale(context),
           builder: DevicePreview.appBuilder,
           theme: AppTheme.lightTheme,
-          home: const SplashScreen(), 
+          home: const LaunchScreen(), 
         );
       },
     );

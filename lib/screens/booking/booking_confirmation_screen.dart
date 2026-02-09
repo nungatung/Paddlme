@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:confetti/confetti.dart';
+import 'package:wave_share/models/booking_model.dart';
 import '../../models/equipment_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../main_navigation.dart';
@@ -14,6 +15,8 @@ class BookingConfirmationScreen extends StatefulWidget {
   final double totalPrice;
   final String deliveryOption;
   final String deliveryAddress;
+  final String bookingReference;
+  final BookingStatus status;
 
   const BookingConfirmationScreen({
     super.key,
@@ -25,6 +28,8 @@ class BookingConfirmationScreen extends StatefulWidget {
     required this. totalPrice,
     required this. deliveryOption,
     required this.deliveryAddress,
+    required this.bookingReference,
+    required this.status,
   });
 
   @override
@@ -78,9 +83,11 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Title
-                  const Text(
-                    'Booking Confirmed! ',
+                  // In build method, change the title based on status
+                  Text(
+                    widget.status == BookingStatus.pending 
+                        ? 'Booking Request Sent!' 
+                        : 'Booking Confirmed!',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -88,15 +95,27 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: 12),
-
+                  // Update subtitle
                   Text(
-                    'Your rental is all set.  We\'ve sent a confirmation to your email.',
+                    widget.status == BookingStatus.pending
+                        ? 'Waiting for ${widget.equipment.ownerName} to approve your request.'
+                        : 'Your rental is all set. We\'ve sent a confirmation to your email.',
                     style: TextStyle(
-                      fontSize:  16,
-                      color:  Colors.grey[600],
+                      fontSize: 16,
+                      color: Colors.grey[600],
                     ),
-                    textAlign:  TextAlign.center,
+                    textAlign: TextAlign.center,
+                  ),
+
+                  // Update the "Next Steps" section
+                  Text(
+                    widget.status == BookingStatus.pending
+                        ? '${widget.equipment.ownerName} has 24 hours to respond to your request.'
+                        : '${widget.equipment.ownerName} will contact you 24 hours before your rental.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blue[800],
+                    ),
                   ),
 
                   const SizedBox(height: 32),

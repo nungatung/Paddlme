@@ -317,7 +317,7 @@ class _MessagesListScreenState extends State<MessagesListScreen> {
     } else if (difference.inDays < 7) {
       return '${difference.inDays}d';
     } else {
-      return DateFormat('MMM d').format(timestamp);
+      return DateFormat('d MMM').format(timestamp);
     }
   }
 }

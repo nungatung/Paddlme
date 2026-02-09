@@ -507,11 +507,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Category Chips
                     SizedBox(
-                      height:  42,
+                      height: 42,
                       child: Stack(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            padding: const EdgeInsets.only(left: 16, right: 40), // Reduced left padding, keep right for arrow
                             child: SingleChildScrollView(
                               controller: _categoryScrollController,
                               scrollDirection: Axis.horizontal,
@@ -525,6 +525,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   _buildCategoryChip('SUPs', EquipmentCategory.sup, Icons.surfing),
                                   const SizedBox(width: 8),
                                   _buildCategoryChip('Jet Skis', EquipmentCategory.jetSki, Icons.directions_boat),
+                                  const SizedBox(width: 8),
+                                  _buildCategoryChip('Boats', EquipmentCategory.boat, Icons.directions_boat_filled),
+                                  const SizedBox(width: 16), // Extra padding at end
                                 ],
                               ),
                             ),
@@ -536,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               top: 0,
                               bottom: 0,
                               child: Container(
-                                width: 36,
+                                width: 32,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -545,27 +548,31 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                 ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: _scrollLeft,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black. withOpacity(0.1),
-                                            blurRadius:  4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      margin: const EdgeInsets.all(3),
-                                      child: const Icon(
-                                        Icons. chevron_left,
-                                        color: AppColors.primary,
-                                        size: 20,
+                                child: Center(
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: _scrollLeft,
+                                        customBorder: const CircleBorder(),
+                                        child: const Icon(
+                                          Icons.chevron_left,
+                                          color: AppColors.primary,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -579,36 +586,40 @@ class _HomeScreenState extends State<HomeScreen> {
                               top: 0,
                               bottom: 0,
                               child: Container(
-                                width: 36,
+                                width: 40,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      Colors.white. withOpacity(0.0),
+                                      Colors.white.withOpacity(0.0),
                                       Colors.white,
                                     ],
                                   ),
                                 ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: _scrollRight,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors. white,
-                                        shape:  BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors. black.withOpacity(0.1),
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      margin: const EdgeInsets.all(3),
-                                      child:  const Icon(
-                                        Icons.chevron_right,
-                                        color: AppColors.primary,
-                                        size: 20,
+                                child: Center(
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: _scrollRight,
+                                        customBorder: const CircleBorder(),
+                                        child: const Icon(
+                                          Icons.chevron_right,
+                                          color: AppColors.primary,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -652,7 +663,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => EquipmentDetailScreen(
-                                          equipment: _filteredEquipment[index],
+                                          equipment: _filteredEquipment[index], equipmentId: '',
                                         ),
                                       ),
                                     );

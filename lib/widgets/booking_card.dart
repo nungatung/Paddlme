@@ -6,24 +6,29 @@ import '../screens/equipment/equipment_detail_screen.dart';
 import '../screens/reviews/leave_review_screen.dart';
 import '../screens/messages/chat_screen.dart';
 import '../services/messaging_service.dart';
+import '../../services/equipment_service.dart';
+
 
 class BookingCard extends StatelessWidget {
   final Booking booking;
 
   const BookingCard({
     super.key,
-    required this. booking,
+    required this.booking,
   });
 
   Color get _statusColor {
-    switch (booking. status) {
-      case BookingStatus.upcoming:
-        return AppColors.primary;
-      case BookingStatus. active:
+    switch (booking.status) {
+      case BookingStatus.pending:
+        return Colors.orange;
+      case BookingStatus.confirmed:
+        return Colors.blue;
+      case BookingStatus.active:
         return AppColors.success;
-      case BookingStatus. completed:
+      case BookingStatus.completed:
         return Colors.grey;
       case BookingStatus.cancelled:
+      case BookingStatus.declined:
         return AppColors.error;
     }
   }
@@ -47,13 +52,36 @@ class BookingCard extends StatelessWidget {
         children: [
           // Equipment Info
           InkWell(
-            onTap: () {
-              Navigator. push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EquipmentDetailScreen(equipment: booking.equipment),
-                ),
+            onTap: () async {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
               );
+              
+              try {
+                final equipmentService = EquipmentService();
+                final equipment = await equipmentService.getEquipmentById(booking.equipmentId);
+                
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                
+                if (equipment != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EquipmentDetailScreen(equipment: equipment, equipmentId: '',),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error loading equipment: $e')),
+                  );
+                }
+              }
             },
             child:  Padding(
               padding: const EdgeInsets.all(16),
@@ -63,7 +91,7 @@ class BookingCard extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image. network(
-                      booking.equipment.imageUrls.first,
+                      booking.equipmentImageUrl,
                       width: 80,
                       height: 80,
                       fit: BoxFit.cover,
@@ -94,7 +122,7 @@ class BookingCard extends StatelessWidget {
                       children: [
                         // Title
                         Text(
-                          booking.equipment.title,
+                          booking.equipmentTitle,
                           style: const TextStyle(
                             fontSize:  16,
                             fontWeight: FontWeight.w600,
@@ -105,26 +133,7 @@ class BookingCard extends StatelessWidget {
 
                         const SizedBox(height: 4),
 
-                        // Location
-                        Row(
-                          children: [
-                            Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                booking.equipment.location,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 8),
+                  
 
                         // Status Badge
                         Container(
@@ -164,7 +173,7 @@ class BookingCard extends StatelessWidget {
                     Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 8),
                     Text(
-                      DateFormat('EEE, MMM d, yyyy').format(booking.startDate),
+                      DateFormat('EEE, d MMM , yyyy').format(booking.startDate),
                       style: const TextStyle(
                         fontSize:  14,
                         fontWeight: FontWeight.w500,
@@ -205,7 +214,7 @@ class BookingCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         booking.deliveryOption == 'pickup'
-                            ? 'Pickup at ${booking.equipment.location}'
+                            ? 'Pickup at ${booking.deliveryAddress}'
                             : 'Delivery to ${booking.deliveryAddress}',
                         style: const TextStyle(
                           fontSize: 14,
@@ -262,7 +271,7 @@ class BookingCard extends StatelessWidget {
                 ),
 
                 // Action Buttons (only for upcoming bookings)
-                if (booking.isUpcoming) ...[
+                if (booking.isPending || booking.isConfirmed) ...[
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -281,13 +290,13 @@ class BookingCard extends StatelessWidget {
 
                               final messagingService = MessagingService();
                               final conversationId = await messagingService.getOrCreateConversation(
-                                otherUserId: booking.equipment.ownerId,
-                                otherUserName: booking.equipment.ownerName,
-                                otherUserAvatarUrl: booking.equipment.ownerImageUrl,
-                                equipmentId: booking.equipment.id,
-                                equipmentTitle: booking.equipment.title,
-                                equipmentImageUrl: booking.equipment.imageUrls.isNotEmpty
-                                    ? booking.equipment.imageUrls.first
+                                otherUserId: booking.ownerId,
+                                otherUserName: booking.ownerName,
+                                otherUserAvatarUrl: null,
+                                equipmentId: booking.equipmentId,
+                                equipmentTitle: booking.equipmentTitle,
+                                equipmentImageUrl: booking.equipmentImageUrl.isNotEmpty
+                                    ? booking.equipmentImageUrl.first
                                     : null,
                               );
 
@@ -300,12 +309,12 @@ class BookingCard extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder: (_) => ChatScreen(
                                     conversationId: conversationId,
-                                    otherUserId: booking.equipment.ownerId,
-                                    otherUserName: booking.equipment.ownerName,
-                                    otherUserAvatarUrl: booking.equipment.ownerImageUrl,
-                                    equipmentTitle: booking.equipment.title,
-                                    equipmentImageUrl: booking.equipment.imageUrls.isNotEmpty
-                                        ? booking.equipment.imageUrls.first
+                                    otherUserId: booking.ownerId,
+                                    otherUserName: booking.ownerName,
+                                    otherUserAvatarUrl: null,
+                                    equipmentTitle: booking.equipmentTitle,
+                                    equipmentImageUrl: booking.equipmentImageUrl.isNotEmpty
+                                        ? booking.equipmentImageUrl.first
                                         : null,
                                   ),
                                 ),
@@ -439,4 +448,8 @@ class BookingCard extends StatelessWidget {
       ),
     );
   }
+}
+
+extension on String {
+  get first => null;
 }

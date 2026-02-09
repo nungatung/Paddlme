@@ -212,75 +212,7 @@ class OwnerProfileBottomSheet extends StatelessWidget {
                     const SizedBox(height: 24),
                   ],
 
-                  // Action Buttons
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 50,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Message feature coming soon!'),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                              label: const Text(
-                                'Message',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(
-                                  color: AppColors. primary,
-                                  width:  2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                // Scroll to listings section
-                                // (Already visible below)
-                              },
-                              icon: const Icon(Icons.grid_view, size: 20),
-                              label: const Text(
-                                'View Listings',
-                                style:  TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                
 
                   const SizedBox(height: 32),
                 ],
@@ -322,7 +254,7 @@ class OwnerProfileBottomSheet extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => EquipmentDetailScreen(
-                                  equipment: ownerListings[index],
+                                  equipment: ownerListings[index], equipmentId: '',
                                 ),
                               ),
                             );

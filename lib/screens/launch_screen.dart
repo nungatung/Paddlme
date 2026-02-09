@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:wave_share/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wave_share/services/notification_service.dart';
 import '../core/theme/app_colors.dart';
 import 'splash_screen.dart';
 import 'main_navigation.dart';
 
 /// Simple instant logo screen (like Trade Me)
 class LaunchScreen extends StatefulWidget {
-  const LaunchScreen({super.key});
+  final NotificationService? notificationService;
+  const LaunchScreen({super.key, this.notificationService,});
 
   @override
   State<LaunchScreen> createState() => _LaunchScreenState();
@@ -40,7 +42,7 @@ class _LaunchScreenState extends State<LaunchScreen> {
 
     if (isLoggedIn) {
       // ✅ Logged in → Go straight home
-      destination = const MainNavigation();
+      destination = MainNavigation(notificationService: widget.notificationService);
     } else if (hasSeenOnboarding) {
       // ✅ Seen onboarding but logged out → Skip splash, go to login
       // We'll handle this in splash screen

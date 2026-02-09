@@ -127,9 +127,9 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: widget.booking.equipment.imageUrls.isNotEmpty
+                          child: widget.booking.equipmentImageUrl.isNotEmpty
                               ? Image.network(
-                                  widget.booking.equipment.imageUrls.first,
+                                  widget.booking.equipmentImageUrl,
                                   width: 70,
                                   height: 70,
                                   fit: BoxFit.cover,
@@ -169,7 +169,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.booking.equipment.title,
+                                widget.booking.equipmentTitle,
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -179,7 +179,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Owned by ${widget.booking.equipment.ownerName}',
+                                'Owned by ${widget.booking.ownerName}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[600],

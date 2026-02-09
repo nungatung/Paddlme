@@ -3,6 +3,10 @@ import 'package:intl/intl.dart';
 import '../../models/equipment_model.dart';
 import '../../core/theme/app_colors.dart';
 import 'booking_confirmation_screen.dart';
+import '../../models/booking_model.dart'; 
+import '../../services/auth_service.dart'; 
+import '../../services/booking_service.dart';
+
 
 class BookingSummaryScreen extends StatefulWidget {
   final EquipmentModel equipment;
@@ -39,39 +43,68 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
   double get _grandTotal => widget.totalPrice + _deliveryFee + _serviceFee;
 
   void _processBooking() async {
-    if (_deliveryOption == 'delivery' && _deliveryAddress.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a delivery address'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
+  if (_deliveryOption == 'delivery' && _deliveryAddress.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter a delivery address'),
+        backgroundColor: AppColors.error,
+      ),
+    );
+    return;
+  }
 
-    if (! _agreeToTerms) {
-      ScaffoldMessenger. of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to the rental terms'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
+  if (!_agreeToTerms) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please agree to the rental terms'),
+        backgroundColor: AppColors.error,
+      ),
+    );
+    return;
+  }
 
-    setState(() {
-      _isProcessing = true;
-    });
+  setState(() {
+    _isProcessing = true;
+  });
 
-    // Simulate payment processing
-    await Future.delayed(const Duration(seconds: 2));
+  try {
+    final authService = AuthService();
+    final currentUser = authService.currentUser!;
+    
+    // Create booking object
+    final booking = Booking(
+      id: '', // Will be set by Firestore
+      equipmentId: widget.equipment.id,
+      equipmentTitle: widget.equipment.title,
+      equipmentImageUrl: widget.equipment.imageUrls.isNotEmpty 
+          ? widget.equipment.imageUrls.first 
+          : '',
+      ownerId: widget.equipment.ownerId,
+      ownerName: widget.equipment.ownerName,
+      renterId: currentUser.uid,
+      renterName: currentUser.displayName ?? 'Unknown',
+      startDate: widget.startDate,
+      endDate: widget.endDate,
+      startTime: widget.startTime.format(context),
+      endTime: widget.endTime.format(context),
+      totalPrice: _grandTotal,
+      status: BookingStatus.pending, // Start as pending
+      deliveryOption: _deliveryOption,
+      deliveryAddress: _deliveryOption == 'delivery' ? _deliveryAddress : null,
+      bookingReference: 'WS${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+      bookingDate: DateTime.now(),
+    );
+
+    // Save to Firestore
+    final bookingService = BookingService();
+    final bookingId = await bookingService.createBooking(booking);
 
     if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => BookingConfirmationScreen(
-            equipment:  widget.equipment,
+            equipment: widget.equipment,
             startDate: widget.startDate,
             endDate: widget.endDate,
             startTime: widget.startTime,
@@ -79,11 +112,29 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
             totalPrice: _grandTotal,
             deliveryOption: _deliveryOption,
             deliveryAddress: _deliveryAddress,
+            bookingReference: booking.bookingReference,
+            status: BookingStatus.pending, // Pass status to show "Pending Approval"
           ),
         ),
       );
     }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating booking: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
   }
+}
 
   @override
   Widget build(BuildContext context) {

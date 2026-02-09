@@ -14,6 +14,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+         isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -43,15 +44,11 @@ flutter {
 }
 
 dependencies {
-    // ✅ Import the Firebase BoM (Bill of Materials)
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
-    
-    // ✅ Firebase Analytics (example - already included via BoM)
     implementation("com.google.firebase:firebase-analytics")
-    
-    // ✅ MultiDex support
     implementation("androidx.multidex:multidex:2.0.1")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     
-    // When using the BoM, don't specify versions in Firebase dependencies
-    // Add other Firebase products you want to use here 
+   
 }

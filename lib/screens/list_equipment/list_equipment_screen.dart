@@ -597,39 +597,59 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
                 ),
               ],
             ),
+            // Navigation Buttons
             child: SafeArea(
               child: Row(
+                // We use Center if it's Step 1, otherwise SpaceBetween
+                mainAxisAlignment: _currentStep == 0 ? MainAxisAlignment.center : MainAxisAlignment.start,
                 children: [
-                  if (_currentStep > 0)
+                  // Only show Back button if we are past Step 1
+                  if (_currentStep > 0) ...[
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _previousStep,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 56),
                           side: BorderSide(color: Colors.grey[300]!),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                         ),
                         child: const Text('Back'),
                       ),
                     ),
-                  if (_currentStep > 0) const SizedBox(width: 16),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _nextStep,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 56),
-                      ),
-                      child: Text(
-                        _currentStep < 7 ? 'Continue' : 'Publish Listing',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                    const SizedBox(width: 16),
+                  ],
+
+                  // The Continue Button
+                  _currentStep == 0 
+                    ? SizedBox(
+                        width: 220, // <--- Fixed width ONLY for Step 1
+                        child: ElevatedButton(
+                          onPressed: _nextStep,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 56),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                          ),
+                          child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
+                      )
+                    : Expanded(
+                        flex: 2, // <--- Keeps your existing full-width look for all other steps
+                        child: ElevatedButton(
+                          onPressed: _nextStep,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 56),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                          ),
+                          child: Text(
+                            _currentStep < 7 ? 'Continue' : 'Publish Listing',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -687,7 +707,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
           EquipmentCategory.kayak,
           Icons.kayaking,
           'Kayak',
-          'Single or tandem kayaks',
+          'Single or double kayaks',
         ),
         const SizedBox(height: 16),
         _buildTypeCard(
@@ -754,7 +774,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
               ),
               child: Icon(
                 icon,
-                size: 32,
+                size: 25,
                 color: isSelected ? AppColors.primary : Colors.grey[600],
               ),
             ),
@@ -831,7 +851,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> {
             controller: _titleController,
             decoration: InputDecoration(
               hintText:
-                  'e.g.  Ocean Kayak Scrambler - Perfect for Bay Exploring',
+                  'e.g.  Seaflo Single Sit-On Kayak  - Perfect for Bay Exploring',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(

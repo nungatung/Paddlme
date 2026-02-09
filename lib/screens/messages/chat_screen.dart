@@ -42,12 +42,15 @@ class _ChatScreenState extends State<ChatScreen> {
     _messagingService.markAsRead(widget.conversationId);
   }
 
+  
+
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
+  
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty || _isSending) return;

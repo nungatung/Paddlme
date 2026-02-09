@@ -17,7 +17,7 @@ class EquipmentDetailScreen extends StatefulWidget {
 
   const EquipmentDetailScreen({
     super.key,
-    required this.equipment,
+    required this.equipment, required String equipmentId,
   });
 
   @override
@@ -583,13 +583,18 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                                     child: OutlinedButton.icon(
                                       onPressed: _contactOwner,
                                       icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                                      label: const Text('Message'),
+                                      label: const Text(
+                                        'Message',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
                                       style: OutlinedButton.styleFrom(
                                         side: const BorderSide(color: AppColors.primary, width: 2),
                                         foregroundColor: AppColors.primary,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8), // Reduced padding
                                       ),
                                     ),
                                   ),
@@ -630,8 +635,13 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8), // Reduced padding
                                       ),
-                                      child: const Text('View Profile'),
+                                      child: const Text(
+                                        'View Profile',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
                                     ),
                                   ),
                                 ),

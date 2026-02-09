@@ -12,6 +12,7 @@ class ChatMessage {
   final bool isRead;
   final String? equipmentId;  // Optional: for context
   final MessageType type;
+  final List<String> participantIds;
 
   ChatMessage({
     required this.id,
@@ -25,6 +26,7 @@ class ChatMessage {
     this.isRead = false,
     this.equipmentId,
     this.type = MessageType.text,
+    required this.participantIds,
   });
 
   // From Firestore
@@ -45,6 +47,7 @@ class ChatMessage {
         (e) => e.name == data['type'],
         orElse: () => MessageType.text,
       ),
+      participantIds: List<String>.from(data['participantIds'] ?? [])
     );
   }
 
@@ -61,6 +64,7 @@ class ChatMessage {
       'isRead': isRead,
       'equipmentId': equipmentId,
       'type': type.name,
+      'participantIds': participantIds,
     };
   }
 }

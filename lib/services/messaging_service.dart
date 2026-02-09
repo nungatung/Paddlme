@@ -59,7 +59,7 @@ class MessagingService {
     return docRef.id;
   }
 
-  // ✅ Send message
+  // ✅ Send message - UPDATED to use subcollection
   Future<void> sendMessage({
     required String conversationId,
     required String receiverId,
@@ -67,6 +67,7 @@ class MessagingService {
     String? equipmentId,
   }) async {
     final currentUser = _authService.currentUser!;
+    final participantIds = [currentUser.uid, receiverId]..sort();
 
     final chatMessage = ChatMessage(
       id: '',
@@ -79,10 +80,15 @@ class MessagingService {
       timestamp: DateTime.now(),
       isRead: false,
       equipmentId: equipmentId,
+      participantIds: participantIds,
     );
 
-    // Add message
-    await _firestore.collection('messages').add(chatMessage.toFirestore());
+    // Add message to subcollection instead of top-level
+    await _firestore
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .add(chatMessage.toFirestore());
 
     // Update conversation
     await _firestore.collection('conversations').doc(conversationId).update({
@@ -91,7 +97,7 @@ class MessagingService {
     });
   }
 
-  // ✅ Mark messages as read
+  // ✅ Mark messages as read - UPDATED to use subcollection
   Future<void> markAsRead(String conversationId) async {
     final currentUser = _authService.currentUser!;
 
@@ -100,10 +106,11 @@ class MessagingService {
       'unreadCounts.${currentUser.uid}': 0,
     });
 
-    // Mark messages as read
+    // Mark messages as read in subcollection
     final unreadMessages = await _firestore
+        .collection('conversations')
+        .doc(conversationId)
         .collection('messages')
-        .where('conversationId', isEqualTo: conversationId)
         .where('receiverId', isEqualTo: currentUser.uid)
         .where('isRead', isEqualTo: false)
         .get();
@@ -115,7 +122,7 @@ class MessagingService {
     await batch.commit();
   }
 
-  // ✅ Stream conversations for current user
+  // ✅ Stream conversations for current user - NO CHANGES
   Stream<List<ChatConversation>> getConversationsStream() {
     final currentUser = _authService.currentUser!;
 
@@ -129,23 +136,25 @@ class MessagingService {
             .toList());
   }
 
-  // ✅ Stream messages for conversation
+  // ✅ Stream messages for conversation - UPDATED to use subcollection
   Stream<List<ChatMessage>> getMessagesStream(String conversationId) {
     return _firestore
+        .collection('conversations')
+        .doc(conversationId)
         .collection('messages')
-        .where('conversationId', isEqualTo: conversationId)
         .orderBy('timestamp', descending: false)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList());
   }
 
-  // ✅ Delete conversation
+  // ✅ Delete conversation - UPDATED to use subcollection
   Future<void> deleteConversation(String conversationId) async {
-    // Delete all messages
+    // Delete all messages from subcollection
     final messages = await _firestore
+        .collection('conversations')
+        .doc(conversationId)
         .collection('messages')
-        .where('conversationId', isEqualTo: conversationId)
         .get();
 
     final batch = _firestore.batch();

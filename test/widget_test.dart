@@ -7,24 +7,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:wave_share/main.dart';
+import 'package:wave_share/services/notification_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App launches smoke test', (WidgetTester tester) async {
+    // Create a mock notification service or skip it
+    final notificationService = NotificationService();
+    
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const WaveShareApp());
+    await tester.pumpWidget(WaveShareApp(notificationService: notificationService));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Just verify the app builds
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

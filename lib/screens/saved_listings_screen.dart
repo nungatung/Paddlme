@@ -173,7 +173,7 @@ class _SavedListingsScreenState extends State<SavedListingsScreen>
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => EquipmentDetailScreen(equipment: equipment),
+                  builder: (_) => EquipmentDetailScreen(equipment: equipment, equipmentId: '',),
                 ),
               );
               

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/constants/mock_data.dart';
 import '../../widgets/booking_card.dart';
 import '../../widgets/equipment_card.dart';
 import '../../models/user_model.dart';
-import '../../models/equipment_model.dart'; // ✅ Add this
+import '../../models/equipment_model.dart';
+import '../../models/booking_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
-import '../../services/equipment_service.dart'; // ✅ Add this
+import '../../services/equipment_service.dart';
+import '../../services/booking_service.dart';
 import '../equipment/equipment_detail_screen.dart';
-import '../list_equipment/list_equipment_screen.dart'; // ✅ Add this
+import '../list_equipment/list_equipment_screen.dart';
+import '../booking/owner_bookings_screen.dart';
 import '../auth/login_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -25,19 +27,26 @@ class _ProfileScreenState extends State<ProfileScreen>
   late TabController _tabController;
   final _authService = AuthService();
   final _userService = UserService();
-  final _equipmentService = EquipmentService(); // ✅ Add this
+  final _equipmentService = EquipmentService();
+  final _bookingService = BookingService();
 
   UserModel? _currentUser;
-  List<EquipmentModel> _userListings = []; // ✅ Changed from mock data
+  List<EquipmentModel> _userListings = [];
+  List<Booking> _ownerBookings = [];
+  List<Booking> _userBookings = [];
   bool _isLoading = true;
-  bool _isLoadingListings = true; // ✅ Add this
+  bool _isLoadingListings = true;
+  bool _isLoadingBookings = true;
+  bool _bookingsStreamInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadUserData();
-    _loadUserListings(); // ✅ Add this
+    _loadUserListings();
+    _loadUserBookings();
+    _loadOwnerBookings();
   }
 
   Future<void> _loadUserData() async {
@@ -57,7 +66,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // ✅ NEW: Load user's equipment listings from Firestore
   Future<void> _loadUserListings() async {
     final user = _authService.currentUser;
     if (user != null) {
@@ -78,6 +86,53 @@ class _ProfileScreenState extends State<ProfileScreen>
     } else {
       if (mounted) {
         setState(() => _isLoadingListings = false);
+      }
+    }
+  }
+
+  Future<void> _loadUserBookings() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      try {
+        _bookingService.getRenterBookings(user.uid).listen((bookings) {
+          if (mounted) {
+            setState(() {
+              _userBookings = bookings;
+              _isLoadingBookings = false;
+              _bookingsStreamInitialized = true;
+            });
+          }
+        });
+
+        // Safety timeout - stop loading after 2 seconds regardless
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted && !_bookingsStreamInitialized) {
+          setState(() => _isLoadingBookings = false);
+        }
+      } catch (e) {
+        debugPrint('Error loading bookings: $e');
+        if (mounted) {
+          setState(() => _isLoadingBookings = false);
+        }
+      }
+    } else {
+      setState(() => _isLoadingBookings = false);
+    }
+  }
+
+  Future<void> _loadOwnerBookings() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      try {
+        _bookingService.getOwnerBookings(user.uid).listen((bookings) {
+          if (mounted) {
+            setState(() {
+              _ownerBookings = bookings;
+            });
+          }
+        });
+      } catch (e) {
+        debugPrint('Error loading owner bookings: $e');
       }
     }
   }
@@ -118,10 +173,19 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    final bookings = MockData.getMockBookings();
-    final upcomingBookings =
-        bookings.where((b) => b.isUpcoming || b.isActive).toList();
-    final pastBookings = bookings.where((b) => b.isPast).toList();
+    final bookings = _userBookings;
+    final upcomingBookings = bookings
+        .where((b) =>
+            b.status == BookingStatus.pending ||
+            b.status == BookingStatus.confirmed ||
+            b.status == BookingStatus.active)
+        .toList();
+    final pastBookings = bookings
+        .where((b) =>
+            b.status == BookingStatus.completed ||
+            b.status == BookingStatus.cancelled ||
+            b.status == BookingStatus.declined)
+        .toList();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -270,22 +334,54 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                     const SizedBox(height: 24),
 
-                    // Quick Stats
+                    // Quick Stats with Manage Bookings badge
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatCard(
-                            Icons.calendar_today,
-                            upcomingBookings.length.toString(),
-                            'Upcoming',
-                            AppColors.primary.withOpacity(0.1),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const OwnerBookingsScreen(),
+                                ),
+                              );
+                            },
+                            child: Stack(
+                              children: [
+                                _buildStatCard(
+                                  Icons.calendar_today,
+                                  _ownerBookings
+                                      .where((b) => b.status == BookingStatus.pending)
+                                      .length
+                                      .toString(),
+                                  'Requests',
+                                  AppColors.primary.withOpacity(0.1),
+                                ),
+                                if (_ownerBookings
+                                    .where((b) => b.status == BookingStatus.pending)
+                                    .isNotEmpty)
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: Container(
+                                      width: 16,
+                                      height: 16,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: _buildStatCard(
                             Icons.inventory_2_outlined,
-                            _userListings.length.toString(), // ✅ Use real count
+                            _userListings.length.toString(),
                             'Listings',
                             AppColors.accent.withOpacity(0.1),
                           ),
@@ -299,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-            // My Bookings Section (keep mock data for now)
+            // My Bookings Section
             SliverToBoxAdapter(
               child: Container(
                 color: Colors.white,
@@ -357,51 +453,56 @@ class _ProfileScreenState extends State<ProfileScreen>
                   minHeight: 200,
                   maxHeight: 500,
                 ),
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Upcoming Bookings
-                    upcomingBookings.isEmpty
-                        ? _buildEmptyState(
-                            Icons.calendar_today,
-                            'No Upcoming Bookings',
-                            'Your upcoming rentals will appear here',
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(top: 16, bottom: 16),
-                            shrinkWrap: true,
-                            physics: const ClampingScrollPhysics(),
-                            itemCount: upcomingBookings.length,
-                            itemBuilder: (context, index) {
-                              return BookingCard(
-                                  booking: upcomingBookings[index]);
-                            },
-                          ),
+                child: _isLoadingBookings
+                    ? const Center(child: CircularProgressIndicator())
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Upcoming Bookings
+                          upcomingBookings.isEmpty
+                              ? _buildEmptyState(
+                                  Icons.calendar_today,
+                                  'No Upcoming Bookings',
+                                  'Your upcoming rentals will appear here',
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.only(
+                                      top: 16, bottom: 16),
+                                  shrinkWrap: true,
+                                  physics: const ClampingScrollPhysics(),
+                                  itemCount: upcomingBookings.length,
+                                  itemBuilder: (context, index) {
+                                    return BookingCard(
+                                        booking: upcomingBookings[index]);
+                                  },
+                                ),
 
-                    // Past Bookings
-                    pastBookings.isEmpty
-                        ? _buildEmptyState(
-                            Icons.history,
-                            'No Past Bookings',
-                            'Your rental history will appear here',
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(top: 16, bottom: 16),
-                            shrinkWrap: true,
-                            physics: const ClampingScrollPhysics(),
-                            itemCount: pastBookings.length,
-                            itemBuilder: (context, index) {
-                              return BookingCard(booking: pastBookings[index]);
-                            },
-                          ),
-                  ],
-                ),
+                          // Past Bookings
+                          pastBookings.isEmpty
+                              ? _buildEmptyState(
+                                  Icons.history,
+                                  'No Past Bookings',
+                                  'Your rental history will appear here',
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.only(
+                                      top: 16, bottom: 16),
+                                  shrinkWrap: true,
+                                  physics: const ClampingScrollPhysics(),
+                                  itemCount: pastBookings.length,
+                                  itemBuilder: (context, index) {
+                                    return BookingCard(
+                                        booking: pastBookings[index]);
+                                  },
+                                ),
+                        ],
+                      ),
               ),
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-            // ✅ MY LISTINGS SECTION - UPDATED TO USE REAL DATA
+            // My Listings Section
             SliverToBoxAdapter(
               child: Container(
                 color: Colors.white,
@@ -423,7 +524,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           TextButton.icon(
                             onPressed: () async {
-                              // ✅ Navigate to List Equipment screen
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -431,7 +531,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ),
                               );
 
-                              // Refresh listings if equipment was added
                               if (result == true) {
                                 _loadUserListings();
                               }
@@ -442,10 +541,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // ✅ Show loading, empty state, or listings
                     _isLoadingListings
                         ? const Padding(
                             padding: EdgeInsets.all(40),
@@ -485,6 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                                       EquipmentDetailScreen(
                                                     equipment:
                                                         _userListings[index],
+                                                    equipmentId: '',
                                                   ),
                                                 ),
                                               );
@@ -526,7 +623,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-            // Settings Section (unchanged)
+            // Settings Section
             SliverToBoxAdapter(
               child: Container(
                 color: Colors.white,
@@ -547,6 +644,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                         if (result == true) {
                           _loadUserData();
                         }
+                      },
+                    ),
+                    _buildSettingItem(
+                      Icons.calendar_today_outlined,
+                      'Manage Bookings',
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const OwnerBookingsScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildSettingItem(

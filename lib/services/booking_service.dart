@@ -63,11 +63,15 @@ class BookingService {
   }
 
   // Cancel booking (by renter or owner)
-  Future<void> cancelBooking(String bookingId, String reason) async {
-    await _firestore.collection('bookings').doc(bookingId).update({
-      'status': 'cancelled',
-      'cancellationReason': reason,
-    });
+  Future<void> cancelBooking(String bookingId) async {
+    await FirebaseFirestore.instance
+        .collection('bookings')
+        .doc(bookingId)
+        .update({
+          'status': 'cancelled',
+          'cancelledAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
   }
 
   // Mark booking as active (when rental period starts)
@@ -77,10 +81,113 @@ class BookingService {
     });
   }
 
+  Stream<List<Booking>> getActiveBookings(String ownerId) {
+  return FirebaseFirestore.instance
+      .collection('bookings')
+      .where('ownerId', isEqualTo: ownerId)
+      .where('status', isEqualTo: 'active')
+      .orderBy('startDate', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => Booking.fromFirestore(doc))
+          .toList());
+}
+
   // Mark booking as completed
   Future<void> completeBooking(String bookingId) async {
     await _firestore.collection('bookings').doc(bookingId).update({
       'status': 'completed',
     });
+  }
+
+  // Submit review
+  Future<void> submitReview({
+    required String bookingId,
+    required String reviewerId,
+    required String reviewedId,
+    required String reviewerType,
+    required double rating,
+    required String comment,
+  }) async {
+    final batch = FirebaseFirestore.instance.batch();
+    
+    // Get reviewer name from users collection
+    final reviewerDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(reviewerId)
+        .get();
+    final reviewerName = reviewerDoc.data()?['name'] ?? 'Anonymous';
+    
+    // Create the review
+    final reviewRef = FirebaseFirestore.instance.collection('reviews').doc();
+    batch.set(reviewRef, {
+      'bookingId': bookingId,
+      'reviewerId': reviewerId,
+      'reviewerName': reviewerName, // Add this
+      'reviewedId': reviewedId,
+      'reviewerType': reviewerType,
+      'rating': rating,
+      'comment': comment,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    
+    // Update booking to mark as reviewed
+    final bookingRef = FirebaseFirestore.instance.collection('bookings').doc(bookingId);
+    
+    if (reviewerType == 'renter') {
+      // Renter reviewed owner/equipment
+      batch.update(bookingRef, {
+        'renterReviewed': true,
+        'renterReviewId': reviewRef.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Owner reviewed renter
+      batch.update(bookingRef, {
+        'ownerReviewed': true,
+        'ownerReviewId': reviewRef.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    
+    // Update reviewed user's rating
+    final userRef = FirebaseFirestore.instance.collection('users').doc(reviewedId);
+    final userDoc = await userRef.get();
+    final userData = userDoc.data() as Map<String, dynamic>;
+    
+    final currentRating = userData['rating'] ?? 0.0;
+    final currentReviewCount = userData['reviewCount'] ?? 0;
+    
+    final newReviewCount = currentReviewCount + 1;
+    final newRating = ((currentRating * currentReviewCount) + rating) / newReviewCount;
+    
+    batch.update(userRef, {
+      'rating': newRating,
+      'reviewCount': newReviewCount,
+    });
+    
+    await batch.commit();
+    
+    // Check if both have reviewed and close booking
+    await _checkAndCloseIfFullyReviewed(bookingId);
+  }
+
+  Future<void> _checkAndCloseIfFullyReviewed(String bookingId) async {
+    final bookingDoc = await FirebaseFirestore.instance
+        .collection('bookings')
+        .doc(bookingId)
+        .get();
+    
+    final data = bookingDoc.data() as Map<String, dynamic>;
+    final renterReviewed = data['renterReviewed'] ?? false;
+    final ownerReviewed = data['ownerReviewed'] ?? false;
+    
+    if (renterReviewed && ownerReviewed) {
+      await FirebaseFirestore.instance.collection('bookings').doc(bookingId).update({
+        'status': 'closed',
+        'closedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 }

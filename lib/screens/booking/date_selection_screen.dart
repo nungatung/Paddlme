@@ -27,7 +27,7 @@ class _DateSelectionScreenState extends State<DateSelectionScreen> {
 
   // Mock unavailable dates
   final List<DateTime> _unavailableDates = [
-    DateTime. now().add(const Duration(days: 3)),
+    DateTime.now().add(const Duration(days: 3)),
     DateTime.now().add(const Duration(days: 7)),
     DateTime.now().add(const Duration(days: 14)),
   ];

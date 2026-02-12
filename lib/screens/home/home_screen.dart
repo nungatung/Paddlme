@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wave_share/services/booking_status_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/equipment_model.dart';
 import '../../services/equipment_service.dart';  
@@ -45,6 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadEquipment();
+    _checkBookingStatuses();
+  
     
     _categoryScrollController.addListener(_updateArrowVisibility);
     
@@ -52,6 +55,14 @@ class _HomeScreenState extends State<HomeScreen> {
       _updateArrowVisibility();
     });
   }
+
+  Future<void> _checkBookingStatuses() async {
+    final statusService = BookingStatusService();
+    await statusService.checkAndActivateBookings();
+    await statusService.checkAndCloseBookings();
+  }
+
+
 
   void _updateArrowVisibility() {
     if (_categoryScrollController.hasClients) {
@@ -845,4 +856,5 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+  
 }

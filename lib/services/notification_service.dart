@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'auth_service.dart';
+import '../models/notification_model.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -27,7 +29,13 @@ class NotificationService {
     const iosSettings = DarwinInitializationSettings();
     const initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
     
-    await _localNotifications.initialize(settings: initSettings);
+    // FIXED: Remove 'settings:' named parameter
+    await _localNotifications.initialize(
+      settings: initSettings,
+      onDidReceiveNotificationResponse: (details) {
+        _handleNotificationTap(details.payload);
+      },
+    );
 
     // Get FCM token and save to Firestore
     await _updateFcmToken();
@@ -66,19 +74,22 @@ class NotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    // Show local notification when app is in foreground
     final notification = message.notification;
     final data = message.data;
 
     if (notification != null) {
       await _showLocalNotification(
-        title: notification.title ?? 'New Message',
+        title: notification.title ?? 'New Notification',
         body: notification.body ?? '',
-        payload: data['conversationId'],
+        payload: data.toString(),
       );
       
-      // Update badge count
-      _updateBadgeCount();
+      // Update badge count based on type
+      if (data['type'] == 'booking_confirmed' || data['type'] == 'booking_declined') {
+        // Booking notifications update a different badge
+      } else {
+        _updateBadgeCount();
+      }
     }
   }
 
@@ -88,9 +99,9 @@ class NotificationService {
     String? payload,
   }) async {
     const androidDetails = AndroidNotificationDetails(
-      'messages_channel',
-      'Messages',
-      channelDescription: 'New message notifications',
+      'default_channel',
+      'Default Notifications',
+      channelDescription: 'App notifications',
       importance: Importance.high,
       priority: Priority.high,
     );
@@ -103,8 +114,9 @@ class NotificationService {
     
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
     
+    // FIXED: Remove 'id:' named parameter, use positional parameter
     await _localNotifications.show(
-      id: DateTime.now().millisecond,
+      id: DateTime.now().millisecond, // positional id parameter
       title: title,
       body: body,
       notificationDetails: details,
@@ -114,35 +126,90 @@ class NotificationService {
 
   void _handleMessageOpenedApp(RemoteMessage message) {
     final data = message.data;
-    if (data['type'] == 'message') {
-      // Navigate to chat screen - you'll need to implement this
-      // Use a navigator key or state management to handle navigation
+    final type = data['type'];
+    
+    if (type == 'message') {
       _navigateToChat(data);
+    } else if (type == 'booking_confirmed' || type == 'booking_declined') {
+      _navigateToBooking(data);
     }
   }
 
   void _handleNotificationTap(String? payload) {
-    if (payload != null) {
-      _navigateToChat({'conversationId': payload});
-    }
+    if (payload == null) return;
+    // Parse payload and navigate
+    print('Notification tapped: $payload');
   }
 
   void _navigateToChat(Map<String, dynamic> data) {
-    // TODO: Implement navigation to chat screen
-    // You can use a GlobalKey<NavigatorState> or a state management solution
-    // to navigate from here
     print('Should navigate to conversation: ${data['conversationId']}');
+    // TODO: Implement navigation using navigator key or state management
+  }
+
+  void _navigateToBooking(Map<String, dynamic> data) {
+    print('Should navigate to booking: ${data['bookingId']}');
+    // TODO: Implement navigation to booking details
   }
 
   void _updateBadgeCount() {
-    // Increment badge count - implement based on your state management
-    // This should update the badge on your Messages tab
     _badgeController.add(1);
   }
 
-  // Call this when user reads messages to clear badge
   void clearBadge() {
     _badgeController.add(0);
+  }
+
+  // ==================== BOOKING NOTIFICATION METHODS ====================
+
+  /// Get unread notification count for badge
+  Stream<int> getUnreadCount(String userId) {
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  /// Get all notifications for user
+  Stream<List<AppNotification>> getUserNotifications(String userId) {
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .handleError((error) {
+          debugPrint('getUserNotifications error: $error');
+        })
+        .map((snapshot) => snapshot.docs
+            .map((doc) => AppNotification.fromFirestore(doc))
+            .toList());
+  }
+
+  
+
+  /// Mark single notification as read
+  Future<void> markAsRead(String notificationId) async {
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
+  }
+
+  /// Mark all notifications as read
+  Future<void> markAllAsRead(String userId) async {
+    final batch = FirebaseFirestore.instance.batch();
+    final unreadNotifications = await FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    for (var doc in unreadNotifications.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+
+    await batch.commit();
   }
 
   void dispose() {
@@ -152,6 +219,5 @@ class NotificationService {
 
 // Top-level function for background messages
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Handle background messages
   print('Handling background message: ${message.messageId}');
 }

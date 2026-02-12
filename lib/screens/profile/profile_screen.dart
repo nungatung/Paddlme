@@ -14,6 +14,10 @@ import '../list_equipment/list_equipment_screen.dart';
 import '../booking/owner_bookings_screen.dart';
 import '../auth/login_screen.dart';
 import 'edit_profile_screen.dart';
+import '../../services/notification_service.dart';
+import '../notifications/notifications_screen.dart';
+import 'user_reviews_screen.dart';
+import '../../services/booking_status_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,7 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadUserData();
     _loadUserListings();
     _loadUserBookings();
@@ -137,6 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -177,14 +182,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     final upcomingBookings = bookings
         .where((b) =>
             b.status == BookingStatus.pending ||
-            b.status == BookingStatus.confirmed ||
-            b.status == BookingStatus.active)
+            b.status == BookingStatus.confirmed)
         .toList();
+
+    final activeBookings = bookings
+        .where((b) => b.status == BookingStatus.active)
+        .toList();
+
     final pastBookings = bookings
         .where((b) =>
             b.status == BookingStatus.completed ||
             b.status == BookingStatus.cancelled ||
-            b.status == BookingStatus.declined)
+            b.status == BookingStatus.declined ||
+            b.status == BookingStatus.closed)
         .toList();
 
     return Scaffold(
@@ -294,27 +304,37 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 12),
 
                     // Rating
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star,
-                              size: 18, color: AppColors.accent),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${_currentUser!.displayRating} ${_currentUser!.reviewText}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserReviewsScreen(userId: _currentUser!.uid),
                           ),
-                        ],
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, size: 18, color: AppColors.accent),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${_currentUser!.displayRating} (${_currentUser!.reviewCount} reviews)',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -336,43 +356,37 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                     // Quick Stats with Manage Bookings badge
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const OwnerBookingsScreen(),
+                                  builder: (_) => const OwnerBookingsScreen(userId: '',),
                                 ),
                               );
+                              // Refresh data when returning
+                              _loadOwnerBookings();
                             },
-                            child: Stack(
+                            child: Column(
                               children: [
-                                _buildStatCard(
-                                  Icons.calendar_today,
-                                  _ownerBookings
-                                      .where((b) => b.status == BookingStatus.pending)
-                                      .length
-                                      .toString(),
-                                  'Requests',
-                                  AppColors.primary.withOpacity(0.1),
+                                Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    _buildStatCard(
+                                      Icons.calendar_today,
+                                      // Show count of pending bookings
+                                      _ownerBookings
+                                          .where((b) => b.status == BookingStatus.pending)
+                                          .length
+                                          .toString(),
+                                      'Requests',
+                                      AppColors.primary,
+                                    ),                                    
+                                  ],
                                 ),
-                                if (_ownerBookings
-                                    .where((b) => b.status == BookingStatus.pending)
-                                    .isNotEmpty)
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Container(
-                                      width: 16,
-                                      height: 16,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
                               ],
                             ),
                           ),
@@ -383,7 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Icons.inventory_2_outlined,
                             _userListings.length.toString(),
                             'Listings',
-                            AppColors.accent.withOpacity(0.1),
+                            AppColors.accent,
                           ),
                         ),
                       ],
@@ -436,6 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       tabs: [
                         Tab(text: 'Upcoming (${upcomingBookings.length})'),
+                        Tab(text: 'Active (${activeBookings.length})'),
                         Tab(text: 'Past (${pastBookings.length})'),
                       ],
                     ),
@@ -460,11 +475,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           // Upcoming Bookings
                           upcomingBookings.isEmpty
-                              ? _buildEmptyState(
-                                  Icons.calendar_today,
-                                  'No Upcoming Bookings',
-                                  'Your upcoming rentals will appear here',
-                                )
+                              ? _buildEmptyState(Icons.calendar_today, 'No Upcoming Bookings', 'Your upcoming rentals will appear here')
                               : ListView.builder(
                                   padding: const EdgeInsets.only(
                                       top: 16, bottom: 16),
@@ -474,6 +485,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   itemBuilder: (context, index) {
                                     return BookingCard(
                                         booking: upcomingBookings[index]);
+                                  },
+                                ),
+                          
+                          // NEW: Active Bookings
+                          activeBookings.isEmpty
+                              ? _buildEmptyState(
+                                  Icons.play_circle_outline,
+                                  'No Active Bookings',
+                                  'Your active rentals will appear here',
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.only(top: 16, bottom: 16),
+                                  shrinkWrap: true,
+                                  physics: const ClampingScrollPhysics(),
+                                  itemCount: activeBookings.length,
+                                  itemBuilder: (context, index) {
+                                    return BookingCard(booking: activeBookings[index]);
                                   },
                                 ),
 
@@ -646,6 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         }
                       },
                     ),
+                    
                     _buildSettingItem(
                       Icons.calendar_today_outlined,
                       'Manage Bookings',
@@ -653,21 +682,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const OwnerBookingsScreen(),
+                            builder: (_) => const OwnerBookingsScreen(userId: '',),
                           ),
                         );
                       },
                     ),
-                    _buildSettingItem(
-                      Icons.notifications_outlined,
-                      'Notifications',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Notifications coming soon!')),
-                        );
-                      },
-                    ),
+                    
+                    _buildNotificationSettingItem(context),
+                    
                     _buildSettingItem(
                       Icons.payment_outlined,
                       'Payment Methods',
@@ -717,23 +739,26 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildStatCard(
-      IconData icon, String value, String label, Color color) {
+      IconData icon, String value, String label, Color color, {String? subtitle}) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color.withOpacity(1.0), size: 28),
+          Icon(icon, color: color, size: 28),
           const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: color.withOpacity(1.0),
+              color: color,
             ),
           ),
           const SizedBox(height: 4),
@@ -745,8 +770,97 @@ class _ProfileScreenState extends State<ProfileScreen>
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationSettingItem(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        Icons.notifications_outlined,
+        color: Colors.grey[700],
+      ),
+      title: const Text(
+        'Notifications',
+        style: TextStyle(
+          fontSize: 16,
+          color: Colors.black87,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Notification Badge with error handling
+          StreamBuilder<int>(
+            stream: NotificationService().getUnreadCount(_currentUser!.uid),
+            builder: (context, snapshot) {
+              // Show error if any
+              if (snapshot.hasError) {
+                debugPrint('Badge stream error: ${snapshot.error}');
+                return Icon(Icons.error, color: Colors.red, size: 20);
+              }
+              
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                );
+              }
+              
+              final count = snapshot.data ?? 0;
+              debugPrint('Unread count: $count');
+              
+              if (count == 0) return const SizedBox.shrink();
+              
+              return Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+                child: Text(
+                  count > 99 ? '99+' : '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            },
+          ),
+          Icon(
+            Icons.chevron_right,
+            color: Colors.grey[400],
+          ),
+        ],
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NotificationsScreen(userId: _currentUser!.uid),
+          ),
+        );
+      },
     );
   }
 

@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import '../../models/booking_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../main_navigation.dart';
+import '../../services/booking_service.dart';
+import '../../services/auth_service.dart';
 
 class LeaveReviewScreen extends StatefulWidget {
   final Booking booking;
+  final bool isOwnerReview; // true if owner is reviewing renter, false if renter is reviewing owner/equipment
 
   const LeaveReviewScreen({
     super.key,
     required this.booking,
+    this.isOwnerReview = false, // default to renter reviewing owner
   });
 
   @override
@@ -26,7 +30,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
     super.dispose();
   }
 
-  void _submitReview() async {
+  Future<void> _submitReview() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -51,9 +55,29 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
       _isSubmitting = true;
     });
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final authService = AuthService();
+      final currentUser = authService.currentUser!;
+      
+      // Determine who is being reviewed
+      final reviewedId = widget.isOwnerReview
+          ? widget.booking.renterId    // Owner reviews renter
+          : widget.booking.ownerId;     // Renter reviews owner
+      
+      final reviewerType = widget.isOwnerReview ? 'owner' : 'renter';
 
-    if (mounted) {
+      await BookingService().submitReview(
+        bookingId: widget.booking.id,
+        reviewerId: currentUser.uid,
+        reviewedId: reviewedId,
+        reviewerType: reviewerType,
+        rating: _rating,
+        comment: _commentController.text,
+      );
+
+      if (!mounted) return;
+
+      // Show success dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -78,8 +102,10 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
               ),
             ],
           ),
-          content: const Text(
-            'Thank you for your feedback! Your review helps other renters make informed decisions.',
+          content: Text(
+            widget.isOwnerReview
+                ? 'Thank you for reviewing this renter! Your feedback helps other owners make informed decisions.'
+                : 'Thank you for your feedback! Your review helps other renters make informed decisions.',
           ),
           actions: [
             TextButton(
@@ -94,11 +120,33 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
           ],
         ),
       );
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting review: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Determine who is being reviewed
+    final reviewedName = widget.isOwnerReview 
+        ? widget.booking.renterName  // Owner reviews renter
+        : widget.booking.ownerName;   // Renter reviews owner
+    
+    final reviewedImage = widget.isOwnerReview
+        ? null // You might want to add renter image to booking model
+        : widget.booking.equipmentImageUrl;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -115,7 +163,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ✅ FIXED: Equipment Info Card
+                  // ✅ FIXED: Who is being reviewed Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -127,41 +175,17 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: widget.booking.equipmentImageUrl.isNotEmpty
+                          child: reviewedImage != null && reviewedImage.isNotEmpty
                               ? Image.network(
-                                  widget.booking.equipmentImageUrl,
+                                  reviewedImage,
                                   width: 70,
                                   height: 70,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 70,
-                                      height: 70,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(
-                                        Icons.kayaking,
-                                        color: Colors.grey[600],
-                                        size: 32,
-                                      ),
-                                    );
+                                    return _buildPlaceholderAvatar();
                                   },
                                 )
-                              : Container(
-                                  width: 70,
-                                  height: 70,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.kayaking,
-                                    color: AppColors.primary,
-                                    size: 32,
-                                  ),
-                                ),
+                              : _buildPlaceholderAvatar(),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -169,24 +193,36 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.booking.equipmentTitle,
+                                widget.isOwnerReview 
+                                    ? 'Renter: $reviewedName'
+                                    : 'Owner: $reviewedName',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Owned by ${widget.booking.ownerName}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(height: 4),
+                              if (!widget.isOwnerReview) ...[
+                                Text(
+                                  widget.booking.equipmentTitle,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ] else ...[
+                                Text(
+                                  'Booking completed',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -206,9 +242,11 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                     ),
                     child: Column(
                       children: [
-                        const Text(
-                          'How was your experience?',
-                          style: TextStyle(
+                        Text(
+                          widget.isOwnerReview
+                              ? 'How was this renter?'
+                              : 'How was your experience?',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -261,7 +299,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Comment Section (unchanged)
+                  // Comment Section
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -281,7 +319,9 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Let others know what you thought',
+                          widget.isOwnerReview
+                              ? 'Let others know about this renter'
+                              : 'Let others know what you thought',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -293,7 +333,9 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                           maxLines: 6,
                           maxLength: 500,
                           decoration: InputDecoration(
-                            hintText: 'The equipment was in great condition and the owner was very helpful...',
+                            hintText: widget.isOwnerReview
+                                ? 'The renter was respectful and returned the equipment on time...'
+                                : 'The equipment was in great condition and the owner was very helpful...',
                             filled: true,
                             fillColor: Colors.grey[100],
                             border: OutlineInputBorder(
@@ -307,14 +349,12 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
                   ),
 
                   const SizedBox(height: 24),
-
-                  
                 ],
               ),
             ),
           ),
 
-          // Submit Button (unchanged)
+          // Submit Button
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -328,37 +368,55 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
               ],
             ),
             child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitReview,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[300],
+              child: Center(
+                child: SizedBox(
+                  width: 240,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitReview,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Submit Review',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Submit Review',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderAvatar() {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.person,
+        color: AppColors.primary,
+        size: 32,
       ),
     );
   }

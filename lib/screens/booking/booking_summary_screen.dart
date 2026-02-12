@@ -43,98 +43,127 @@ class _BookingSummaryScreenState extends State<BookingSummaryScreen> {
   double get _grandTotal => widget.totalPrice + _deliveryFee + _serviceFee;
 
   void _processBooking() async {
-  if (_deliveryOption == 'delivery' && _deliveryAddress.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please enter a delivery address'),
-        backgroundColor: AppColors.error,
-      ),
-    );
-    return;
-  }
-
-  if (!_agreeToTerms) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please agree to the rental terms'),
-        backgroundColor: AppColors.error,
-      ),
-    );
-    return;
-  }
-
-  setState(() {
-    _isProcessing = true;
-  });
-
-  try {
-    final authService = AuthService();
-    final currentUser = authService.currentUser!;
-    
-    // Create booking object
-    final booking = Booking(
-      id: '', // Will be set by Firestore
-      equipmentId: widget.equipment.id,
-      equipmentTitle: widget.equipment.title,
-      equipmentImageUrl: widget.equipment.imageUrls.isNotEmpty 
-          ? widget.equipment.imageUrls.first 
-          : '',
-      ownerId: widget.equipment.ownerId,
-      ownerName: widget.equipment.ownerName,
-      renterId: currentUser.uid,
-      renterName: currentUser.displayName ?? 'Unknown',
-      startDate: widget.startDate,
-      endDate: widget.endDate,
-      startTime: widget.startTime.format(context),
-      endTime: widget.endTime.format(context),
-      totalPrice: _grandTotal,
-      status: BookingStatus.pending, // Start as pending
-      deliveryOption: _deliveryOption,
-      deliveryAddress: _deliveryOption == 'delivery' ? _deliveryAddress : null,
-      bookingReference: 'WS${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
-      bookingDate: DateTime.now(),
-    );
-
-    // Save to Firestore
-    final bookingService = BookingService();
-    final bookingId = await bookingService.createBooking(booking);
-
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BookingConfirmationScreen(
-            equipment: widget.equipment,
-            startDate: widget.startDate,
-            endDate: widget.endDate,
-            startTime: widget.startTime,
-            endTime: widget.endTime,
-            totalPrice: _grandTotal,
-            deliveryOption: _deliveryOption,
-            deliveryAddress: _deliveryAddress,
-            bookingReference: booking.bookingReference,
-            status: BookingStatus.pending, // Pass status to show "Pending Approval"
-          ),
-        ),
-      );
-    }
-  } catch (e) {
-    if (mounted) {
+    if (_deliveryOption == 'delivery' && _deliveryAddress.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error creating booking: $e'),
+        const SnackBar(
+          content: Text('Please enter a delivery address'),
           backgroundColor: AppColors.error,
         ),
       );
+      return;
     }
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isProcessing = false;
-      });
+
+    if (!_agreeToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please agree to the rental terms'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      final authService = AuthService();
+      final currentUser = authService.currentUser!;
+      
+      // Calculate UTC timestamp for start time
+      final startTimeString = widget.startTime.format(context); // e.g., "5:39 PM"
+      
+      // Parse time to 24-hour format
+      final timeParts = startTimeString.split(' ');
+      final hourMinute = timeParts[0].split(':');
+      var hour = int.parse(hourMinute[0]);
+      final minute = int.parse(hourMinute[1]);
+      
+      if (timeParts.length > 1) {
+        final isPM = timeParts[1].toUpperCase() == 'PM';
+        if (isPM && hour != 12) hour += 12;
+        if (!isPM && hour == 12) hour = 0;
+      }
+      
+      // Create local datetime
+      final localStartDateTime = DateTime(
+        widget.startDate.year,
+        widget.startDate.month,
+        widget.startDate.day,
+        hour,
+        minute,
+      );
+      
+      // Convert to UTC
+      final utcStartDateTime = localStartDateTime.toUtc();
+      
+      // Create booking object
+      final booking = Booking(
+        id: '', // Will be set by Firestore
+        equipmentId: widget.equipment.id,
+        equipmentTitle: widget.equipment.title,
+        equipmentImageUrl: widget.equipment.imageUrls.isNotEmpty 
+            ? widget.equipment.imageUrls.first 
+            : '',
+        ownerId: widget.equipment.ownerId,
+        ownerName: widget.equipment.ownerName,
+        renterId: currentUser.uid,
+        renterName: currentUser.displayName ?? 'Unknown',
+        startDate: widget.startDate,
+        endDate: widget.endDate,
+        startTime: startTimeString,
+        endTime: widget.endTime.format(context),
+        totalPrice: _grandTotal,
+        status: BookingStatus.pending,
+        deliveryOption: _deliveryOption,
+        deliveryAddress: _deliveryOption == 'delivery' ? _deliveryAddress : null,
+        bookingReference: 'WS${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+        bookingDate: DateTime.now(),
+        // NEW: Store UTC timestamp
+        startDateTimeUtc: utcStartDateTime,
+      );
+
+      // Save to Firestore
+      final bookingService = BookingService();
+      final bookingId = await bookingService.createBooking(booking);
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BookingConfirmationScreen(
+              equipment: widget.equipment,
+              startDate: widget.startDate,
+              endDate: widget.endDate,
+              startTime: widget.startTime,
+              endTime: widget.endTime,
+              totalPrice: _grandTotal,
+              deliveryOption: _deliveryOption,
+              deliveryAddress: _deliveryAddress,
+              bookingReference: booking.bookingReference,
+              status: BookingStatus.pending,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating booking: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {

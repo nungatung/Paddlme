@@ -1,8 +1,6 @@
-import 'dart:ui';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'equipment_model.dart';
+
 
 enum BookingStatus {
   pending,      // Waiting for owner approval
@@ -10,7 +8,7 @@ enum BookingStatus {
   active,       // Currently in use
   completed,    // Finished
   cancelled,    // Cancelled by renter or owner
-  declined,     // Owner declined
+  declined, closed,     // Owner declined
 }
 
 class Booking {
@@ -33,7 +31,13 @@ class Booking {
   final String bookingReference;
   final DateTime bookingDate;
   final DateTime? confirmedDate;    // When owner confirmed
-  final String? cancellationReason; // If cancelled/declined
+  final String? cancellationReason;
+  // NEW: Review tracking fields
+  final bool renterReviewed;
+  final bool ownerReviewed;
+  final String? renterReviewId;
+  final String? ownerReviewId; // If cancelled/declined
+  final DateTime? startDateTimeUtc;
 
   Booking({
     required this.id,
@@ -56,6 +60,11 @@ class Booking {
     required this.bookingDate,
     this.confirmedDate,
     this.cancellationReason,
+    this.renterReviewed = false,
+    this.ownerReviewed = false,
+    this.renterReviewId,
+    this.ownerReviewId,
+    this.startDateTimeUtc,
   });
 
   // Convert to Firestore
@@ -80,6 +89,11 @@ class Booking {
       'bookingDate': Timestamp.fromDate(bookingDate),
       'confirmedDate': confirmedDate != null ? Timestamp.fromDate(confirmedDate!) : null,
       'cancellationReason': cancellationReason,
+      'renterReviewed': renterReviewed,
+      'ownerReviewed': ownerReviewed,
+      'renterReviewId': renterReviewId,
+      'ownerReviewId': ownerReviewId,
+      'startDateTimeUtc': startDateTimeUtc != null ? Timestamp.fromDate(startDateTimeUtc!) : null,
     };
   }
 
@@ -112,6 +126,13 @@ class Booking {
           ? (data['confirmedDate'] as Timestamp).toDate() 
           : null,
       cancellationReason: data['cancellationReason'],
+      renterReviewed: data['renterReviewed'] ?? false,
+      ownerReviewed: data['ownerReviewed'] ?? false,
+      renterReviewId: data['renterReviewId'],
+      ownerReviewId: data['ownerReviewId'],
+      startDateTimeUtc: data['startDateTimeUtc'] != null 
+          ? (data['startDateTimeUtc'] as Timestamp).toDate() 
+          : null,
     );
   }
 
@@ -129,6 +150,8 @@ class Booking {
         return 'Cancelled';
       case BookingStatus.declined:
         return 'Declined';
+      case BookingStatus.closed:
+        return 'Closed';
     }
   }
 
@@ -144,6 +167,7 @@ class Booking {
         return Colors.grey;
       case BookingStatus.cancelled:
       case BookingStatus.declined:
+      case BookingStatus.closed:
         return Colors.red;
     }
   }
@@ -153,6 +177,53 @@ class Booking {
   bool get isActive => status == BookingStatus.active;
   bool get isPast => status == BookingStatus.completed || status == BookingStatus.cancelled || status == BookingStatus.declined;
   bool get canCancel => status == BookingStatus.pending || status == BookingStatus.confirmed;
+  bool get isCompleted => status == BookingStatus.completed;
+  bool get isDeclined => status == BookingStatus.declined;
+  bool get isFullyReviewed => renterReviewed && ownerReviewed;
+  
+   // Auto-calculate if booking should be active based on time
+  bool get shouldBeActive {
+    if (status != BookingStatus.confirmed) return false;
+    
+    final now = DateTime.now();
+    
+    // Parse time like "5:39 PM" or "14:30"
+    final timeParts = startTime.split(' ');
+    final hourMinute = timeParts[0].split(':');
+    var hour = int.parse(hourMinute[0]);
+    final minute = int.parse(hourMinute[1]);
+    
+    // Handle AM/PM if present
+    if (timeParts.length > 1) {
+      final isPM = timeParts[1].toUpperCase() == 'PM';
+      if (isPM && hour != 12) hour += 12;
+      if (!isPM && hour == 12) hour = 0;
+    }
+    
+    final startDateTime = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+      hour,
+      minute,
+    );
+    
+    return now.isAfter(startDateTime) || now.isAtSameMomentAs(startDateTime);
+  }
+  
+  // Check if booking is ready for review (completed but not reviewed)
+  bool get isReadyForReview {
+    return status == BookingStatus.completed;
+  }
+  
+
+  // NEW: Check if current user can review (you'll need to pass userId)
+  bool canReview(String currentUserId) {
+    if (status != BookingStatus.completed) return false;
+    if (currentUserId == renterId) return !renterReviewed;
+    if (currentUserId == ownerId) return !ownerReviewed;
+    return false;
+  }
 
 }
 

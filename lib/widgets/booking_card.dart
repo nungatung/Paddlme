@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import '../../services/auth_service.dart';
+import 'package:wave_share/services/booking_service.dart';
 import '../models/booking_model.dart';
 import '../core/theme/app_colors.dart';
 import '../screens/equipment/equipment_detail_screen.dart';
@@ -30,8 +33,31 @@ class BookingCard extends StatelessWidget {
       case BookingStatus.cancelled:
       case BookingStatus.declined:
         return AppColors.error;
+      case BookingStatus.closed:
+        return AppColors.success;
     }
   }
+
+  String get statusText {
+  switch (status) {
+    case BookingStatus.pending:
+      return 'Pending Approval';
+    case BookingStatus.confirmed:
+      return 'Confirmed';
+    case BookingStatus.active:
+      return 'Active';
+    case BookingStatus.completed:
+      return 'Awaiting Review';
+    case BookingStatus.cancelled:
+      return 'Cancelled';
+    case BookingStatus.declined:
+      return 'Declined';
+    default:
+      return 'Unknown';
+  }
+}
+
+  get status => null;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +68,7 @@ class BookingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow:  [
           BoxShadow(
-            color: Colors.black. withOpacity(0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -334,19 +360,19 @@ class BookingCard extends StatelessWidget {
                           },
                           icon: const Icon(Icons.chat_bubble_outline, size: 18),
                           label: const Text(
-                            'Contact Owner',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            'Message',
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
                             minimumSize: const Size(0, 48),
                             side: const BorderSide(color: AppColors.primary, width: 1.5),
+                            foregroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8), // Reduced padding
                           ),
                         ),
                       ),
@@ -372,7 +398,11 @@ class BookingCard extends StatelessWidget {
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[700],
+                              height: 1.0,
                             ),
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ),
@@ -380,31 +410,72 @@ class BookingCard extends StatelessWidget {
                   ),
                 ],
                 
-                // Leave Review Button (for completed bookings)
-                if (booking.status == BookingStatus. completed) ...[
+                // Show review status or button for completed bookings
+                if (booking.status == BookingStatus.completed) ...[
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton. icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LeaveReviewScreen(booking: booking),
+                  
+                  // Get current user ID synchronously
+                  Builder(
+                    builder: (context) {
+                      final currentUser = AuthService().currentUser;
+                      if (currentUser == null) return const SizedBox.shrink();
+                      
+                      final currentUserId = currentUser.uid;
+                      final isRenter = currentUserId == booking.renterId;
+                      final hasReviewed = isRenter ? booking.renterReviewed : booking.ownerReviewed;
+                      
+                      if (hasReviewed) {
+                        // Show "Review Submitted" badge
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green[200]!),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Review Submitted',
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         );
-                      },
-                      icon: const Icon(Icons.star_outline),
-                      label:  const Text('Leave a Review'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
+                      } else {
+                        // Show "Leave Review" button
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => LeaveReviewScreen(booking: booking, isOwnerReview: false,),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.star_outline),
+                            label: const Text('Leave a Review'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.accent,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ],
@@ -415,39 +486,67 @@ class BookingCard extends StatelessWidget {
     );
   }
 
+  
+
   void _showCancelDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius:  BorderRadius.circular(16),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: const Text('Cancel Booking?'),
+      content: const Text(
+        'Are you sure you want to cancel this booking? This action cannot be undone.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Keep Booking'),
         ),
-        title: const Text('Cancel Booking?'),
-        content: const Text(
-          'Are you sure you want to cancel this booking?  This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Keep Booking'),
-          ),
-          TextButton(
-            onPressed:  () {
-              Navigator.pop(context);
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            
+            // Show loading indicator
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => const Center(child: CircularProgressIndicator()),
+            );
+            
+            try {
+              // ACTUALLY CANCEL THE BOOKING
+              await BookingService().cancelBooking(booking.id);
+              
+              if (!context.mounted) return;
+              Navigator.pop(context); // Close loading
+              
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content:  Text('Booking cancelled successfully'),
+                  content: Text('Booking cancelled successfully'),
                   backgroundColor: AppColors.success,
                 ),
               );
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Cancel Booking'),
-          ),
-        ],
-      ),
-    );
-  }
+            } catch (e) {
+              if (!context.mounted) return;
+              Navigator.pop(context); // Close loading
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error cancelling booking: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+          child: const Text('Cancel Booking'),
+        ),
+      ],
+    ),
+  );
+}
 }
 
 extension on String {

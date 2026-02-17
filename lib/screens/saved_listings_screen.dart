@@ -127,25 +127,6 @@ class _SavedListingsScreenState extends State<SavedListingsScreen>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton. icon(
-                onPressed: () {
-                  // ✅ Navigate to home screen properly
-                  Navigator.pop(context);  // Go back to main navigation
-                },
-                icon: const Icon(Icons.search),
-                label: const Text('Browse Equipment'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),

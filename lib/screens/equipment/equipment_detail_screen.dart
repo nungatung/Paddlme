@@ -106,7 +106,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
     ];
   }
 
-  // ✅ ADD THIS METHOD
+  
   Future<void> _contactOwner() async {
     final user = _authService.currentUser;
     
@@ -195,7 +195,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
   void initState() {
     super.initState();
     _checkIfFavorited();
-    // ✅ ADD THIS:
+  
     _scrollController.addListener(_onScroll);
   }
 
@@ -227,15 +227,9 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
     }
   }
 
-  // ✅ ADD THIS METHOD:
   void _onScroll() {
     final currentScroll = _scrollController.position.pixels;
     final maxScroll = _scrollController.position.maxScrollExtent;
-
-    // Show bottom bar if:
-    // 1. Scrolling up
-    // 2. At the top
-    // 3. Near the bottom (last 100px)
     final shouldShow = currentScroll < _lastScrollPosition || // Scrolling up
         currentScroll <= 50 || // At top
         currentScroll >= maxScroll - 100; // Near bottom
@@ -251,7 +245,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose(); // ✅ ADD THIS
+    _scrollController.dispose(); 
     super.dispose();
   }
 
@@ -268,10 +262,10 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
           CustomScrollView(
             controller: _scrollController,
             slivers: [
-              // ✅ UPDATED:  Taller App Bar with Better Image Display
+     
               SliverAppBar(
                 expandedHeight: MediaQuery.of(context).size.height *
-                    0.45, // ✅ 45% of screen height
+                    0.45, 
                 pinned: true,
                 backgroundColor: Colors.white,
                 leading: Container(
@@ -322,31 +316,6 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                         },
                       ),
                     ),
-
-                  // Share button
-                  Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.share, color: Colors.black87),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text('Share functionality coming soon!')),
-                        );
-                      },
-                    ),
-                  ),
 
                   // Favorite button
                   Container(
@@ -491,14 +460,6 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                                     style: TextStyle(color: Colors.grey[400])),
                                 const SizedBox(width: 12),
                               ],
-                              Text(
-                                '${widget.equipment.category.icon} ${widget.equipment.category.displayName}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
                             ],
                           ),
 
@@ -915,6 +876,9 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                             backgroundColor: AppColors.accent,
                             foregroundColor: Colors.white,
                             elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                           child: const Text(
                             'Book Now',

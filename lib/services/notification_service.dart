@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,9 +9,10 @@ import '../models/notification_model.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
   final AuthService _authService = AuthService();
-  
+
   // Stream controller for badge count
   final _badgeController = StreamController<int>.broadcast();
   Stream<int> get badgeStream => _badgeController.stream;
@@ -25,10 +26,12 @@ class NotificationService {
     );
 
     // Initialize local notifications
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings();
-    const initSettings = InitializationSettings(android: androidSettings, iOS: iosSettings);
-    
+    const initSettings =
+        InitializationSettings(android: androidSettings, iOS: iosSettings);
+
     // FIXED: Remove 'settings:' named parameter
     await _localNotifications.initialize(
       settings: initSettings,
@@ -48,7 +51,7 @@ class NotificationService {
 
     // Handle background/terminated messages
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
-    
+
     // Check for initial message (app opened from terminated state)
     final initialMessage = await _fcm.getInitialMessage();
     if (initialMessage != null) {
@@ -67,10 +70,18 @@ class NotificationService {
     final user = _authService.currentUser;
     if (user == null) return;
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .update({'fcmToken': token});
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'fcmToken': token,
+        'updatedAt':
+            FieldValue.serverTimestamp(), // Matches the 'updatedAt' rule
+      });
+    } catch (e) {
+      debugPrint('❌ Error saving FCM token: $e');
+    }
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -83,9 +94,10 @@ class NotificationService {
         body: notification.body ?? '',
         payload: data.toString(),
       );
-      
+
       // Update badge count based on type
-      if (data['type'] == 'booking_confirmed' || data['type'] == 'booking_declined') {
+      if (data['type'] == 'booking_confirmed' ||
+          data['type'] == 'booking_declined') {
         // Booking notifications update a different badge
       } else {
         _updateBadgeCount();
@@ -105,15 +117,16 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
     );
-    
+
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
-    
-    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
-    
+
+    const details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
+
     // FIXED: Remove 'id:' named parameter, use positional parameter
     await _localNotifications.show(
       id: DateTime.now().millisecond, // positional id parameter
@@ -127,7 +140,7 @@ class NotificationService {
   void _handleMessageOpenedApp(RemoteMessage message) {
     final data = message.data;
     final type = data['type'];
-    
+
     if (type == 'message') {
       _navigateToChat(data);
     } else if (type == 'booking_confirmed' || type == 'booking_declined') {
@@ -137,19 +150,11 @@ class NotificationService {
 
   void _handleNotificationTap(String? payload) {
     if (payload == null) return;
-    // Parse payload and navigate
-    print('Notification tapped: $payload');
   }
 
-  void _navigateToChat(Map<String, dynamic> data) {
-    print('Should navigate to conversation: ${data['conversationId']}');
-    // TODO: Implement navigation using navigator key or state management
-  }
+  void _navigateToChat(Map<String, dynamic> data) {}
 
-  void _navigateToBooking(Map<String, dynamic> data) {
-    print('Should navigate to booking: ${data['bookingId']}');
-    // TODO: Implement navigation to booking details
-  }
+  void _navigateToBooking(Map<String, dynamic> data) {}
 
   void _updateBadgeCount() {
     _badgeController.add(1);
@@ -161,47 +166,59 @@ class NotificationService {
 
   // ==================== BOOKING NOTIFICATION METHODS ====================
 
-  /// Get unread notification count for badge
+  // Get unread notification count for badge
   Stream<int> getUnreadCount(String userId) {
+    // Guard: return 0 if no valid userId
+    if (userId.isEmpty) {
+      return Stream.value(0);
+    }
+
     return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
         .collection('notifications')
-        .where('userId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+        .map((snapshot) => snapshot.docs.length)
+        .handleError((error) {
+      debugPrint('getUnreadCount error: $error');
+      return 0;
+    });
   }
 
-  /// Get all notifications for user
   Stream<List<AppNotification>> getUserNotifications(String userId) {
+    if (userId.isEmpty) return Stream.value([]);
+
     return FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
         .collection('notifications')
-        .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .handleError((error) {
-          debugPrint('getUserNotifications error: $error');
-        })
         .map((snapshot) => snapshot.docs
             .map((doc) => AppNotification.fromFirestore(doc))
-            .toList());
+            .toList())
+        .handleError((error) {
+      debugPrint('❌ getUserNotifications error: $error');
+      return <AppNotification>[]; // Prevents the RethrownDartError crash
+    });
   }
 
-  
-
-  /// Mark single notification as read
-  Future<void> markAsRead(String notificationId) async {
+  Future<void> markAsRead(String userId, String notificationId) async {
     await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
         .collection('notifications')
         .doc(notificationId)
         .update({'isRead': true});
   }
 
-  /// Mark all notifications as read
   Future<void> markAllAsRead(String userId) async {
     final batch = FirebaseFirestore.instance.batch();
     final unreadNotifications = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
         .collection('notifications')
-        .where('userId', isEqualTo: userId)
         .where('isRead', isEqualTo: false)
         .get();
 

@@ -117,45 +117,38 @@ async function _sendReviewNotification(
   }
 
   try {
-    const userDoc = await admin.firestore()
-      .collection('users')
-      .doc(userId)
-      .get();
-
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
     const userData = userDoc.data();
     const fcmToken = userData?.fcmToken;
 
-    // Send push notification if token exists
     if (fcmToken) {
       await admin.messaging().send({
         token: fcmToken,
-        notification: {
-          title: title,
-          body: body,
-        },
+        notification: { title, body },
         data: {
-          bookingId: bookingId,
-          reviewId: reviewId,
-          type: type,
+          bookingId,
+          reviewId,
+          type,
           equipmentTitle: equipmentTitle || '',
           clickAction: 'FLUTTER_NOTIFICATION_CLICK',
         },
       });
-      console.log(`Push notification sent to ${userId} for ${type}`);
     }
 
-    // Create in-app notification
-    await admin.firestore().collection('notifications').add({
-      userId: userId,
-      bookingId: bookingId,
-      reviewId: reviewId,
-      title: title,
-      body: body,
-      type: type,
-      isRead: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    console.log(`In-app notification created for ${userId} for ${type}`);
+    // ✅ FIXED: Save to nested subcollection
+    await admin.firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('notifications')
+      .add({
+        bookingId: bookingId,
+        reviewId: reviewId,
+        title: title,
+        body: body,
+        type: type,
+        isRead: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
   } catch (error) {
     console.error(`Error sending notification to ${userId}:`, error);
@@ -328,42 +321,36 @@ async function _sendBookingNotification(
   equipmentTitle: string
 ) {
   try {
-    const userDoc = await admin.firestore()
-      .collection('users')
-      .doc(userId)
-      .get();
-
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
     const userData = userDoc.data();
     const fcmToken = userData?.fcmToken;
 
     if (fcmToken) {
       await admin.messaging().send({
         token: fcmToken,
-        notification: {
-          title: title,
-          body: body,
-        },
+        notification: { title, body },
         data: {
-          bookingId: bookingId,
-          type: type,
+          bookingId,
+          type,
           equipmentTitle: equipmentTitle || '',
           clickAction: 'FLUTTER_NOTIFICATION_CLICK',
         },
       });
-      console.log(`Push notification sent to ${userId}`);
     }
 
-    // Create in-app notification
-    await admin.firestore().collection('notifications').add({
-      userId: userId,
-      bookingId: bookingId,
-      title: title,
-      body: body,
-      type: type,
-      isRead: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    console.log(`In-app notification created for ${userId}`);
+    // ✅ FIXED: Save to nested subcollection
+    await admin.firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('notifications')
+      .add({
+        bookingId: bookingId,
+        title: title,
+        body: body,
+        type: type,
+        isRead: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
 
   } catch (error) {
     console.error(`Error sending notification to ${userId}:`, error);
@@ -438,15 +425,9 @@ async function activateBooking(doc: any, data: any) {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  // Send notification to renter
   const renterId = data.renterId;
   const equipmentTitle = data.equipmentTitle || 'your rental';
-
-  const renterDoc = await admin.firestore()
-    .collection('users')
-    .doc(renterId)
-    .get();
-
+  const renterDoc = await admin.firestore().collection('users').doc(renterId).get();
   const fcmToken = renterDoc.data()?.fcmToken;
 
   if (fcmToken) {
@@ -465,16 +446,19 @@ async function activateBooking(doc: any, data: any) {
     });
   }
 
-  // Create in-app notification
-  await admin.firestore().collection('notifications').add({
-    userId: renterId,
-    bookingId: doc.id,
-    title: 'Booking Started! 🏄',
-    body: `Your rental for ${equipmentTitle} is now active. Enjoy!`,
-    type: 'booking_activated',
-    isRead: false,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  // ✅ FIXED: Save to nested subcollection
+  await admin.firestore()
+    .collection('users')
+    .doc(renterId)
+    .collection('notifications')
+    .add({
+      bookingId: doc.id,
+      title: 'Booking Started! 🏄',
+      body: `Your rental for ${equipmentTitle} is now active. Enjoy!`,
+      type: 'booking_activated',
+      isRead: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
 }
 
 // Cloud Function to clean up FCM tokens when they become invalid

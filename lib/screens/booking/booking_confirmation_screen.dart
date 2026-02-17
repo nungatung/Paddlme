@@ -110,7 +110,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   // Update the "Next Steps" section
                   Text(
                     widget.status == BookingStatus.pending
-                        ? '${widget.equipment.ownerName} has 24 hours to respond to your request.'
+                        ? '${widget.equipment.ownerName} will contact you 24 hours before your rental.'
                         : '${widget.equipment.ownerName} will contact you 24 hours before your rental.',
                     style: TextStyle(
                       fontSize: 14,
@@ -209,8 +209,8 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                           Icons.calendar_today,
                           'Date',
                           widget. startDate == widget.endDate
-                              ? DateFormat('EEEE, MMM d, yyyy').format(widget.startDate)
-                              : '${DateFormat('MMM d').format(widget.startDate)} - ${DateFormat('MMM d, yyyy').format(widget.endDate)}',
+                              ? DateFormat('EEEE, d MMM, yyyy').format(widget.startDate)
+                              : '${DateFormat('d MMM').format(widget.startDate)} - ${DateFormat('MMM d, yyyy').format(widget.endDate)}',
                         ),
                         const SizedBox(height:  16),
                         _buildInfoRow(
@@ -281,7 +281,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
 
                   // Action Buttons
                   SizedBox(
-                    width: double.infinity,
+                    width: 240,
                     height: 56,
                     child: ElevatedButton(
                       onPressed: () {
@@ -305,31 +305,6 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen> {
                   ),
 
                   const SizedBox(height: 12),
-
-                  SizedBox(
-                    width:  double.infinity,
-                    height: 56,
-                    child: OutlinedButton. icon(
-                      onPressed:  () {
-                        // TODO: Navigate to bookings screen
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('My Bookings screen coming soon!')),
-                        );
-                      },
-                      icon:  const Icon(Icons.calendar_today),
-                      label:  const Text(
-                        'View My Bookings',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.primary),
-                        foregroundColor: AppColors.primary,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

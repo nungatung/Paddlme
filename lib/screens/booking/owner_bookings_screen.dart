@@ -236,7 +236,8 @@ class _ActiveBookingsList extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.play_circle_outline, size: 64, color: Colors.grey[400]),
+                Icon(Icons.play_circle_outline,
+                    size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
                   'No active rentals',
@@ -284,29 +285,31 @@ class _ActiveBookingsList extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator()),
+                builder: (_) =>
+                    const Center(child: CircularProgressIndicator()),
               );
-              
+
               try {
                 await BookingStatusService().markAsReturned(booking.id);
-                
+
                 if (!context.mounted) return;
                 Navigator.pop(context); // Close loading
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Booking marked as returned. Awaiting reviews.'),
+                    content:
+                        Text('Booking marked as returned. Awaiting reviews.'),
                     backgroundColor: AppColors.success,
                   ),
                 );
               } catch (e) {
                 if (!context.mounted) return;
                 Navigator.pop(context);
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e')),
                 );
@@ -352,10 +355,11 @@ class _AllBookingsList extends StatelessWidget {
             final booking = bookings[index];
             final isCompleted = booking.status == BookingStatus.completed;
             final hasOwnerReviewed = booking.ownerReviewed ?? false;
-            
+
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: [
                   ListTile(
@@ -369,7 +373,8 @@ class _AllBookingsList extends StatelessWidget {
                       ),
                     ),
                     title: Text(booking.renterName),
-                    subtitle: Text('${booking.equipmentTitle} • ${booking.statusText}'),
+                    subtitle: Text(
+                        '${booking.equipmentTitle} • ${booking.statusText}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -382,14 +387,16 @@ class _AllBookingsList extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder: (_) => LeaveReviewScreen(
                                     booking: booking,
-                                    isOwnerReview: true, // Indicate this is owner's review
+                                    isOwnerReview:
+                                        true, // Indicate this is owner's review
                                   ),
                                 ),
                               );
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -403,10 +410,11 @@ class _AllBookingsList extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                         ],
-                        
+
                         // Status badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: booking.statusColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -423,7 +431,7 @@ class _AllBookingsList extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Show "Mark as Returned" button for active bookings
                   if (booking.status == BookingStatus.active) ...[
                     const Divider(height: 1),
@@ -432,7 +440,8 @@ class _AllBookingsList extends StatelessWidget {
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => _showReturnConfirmation(context, booking),
+                          onPressed: () =>
+                              _showReturnConfirmation(context, booking),
                           icon: const Icon(Icons.check_circle, size: 18),
                           label: const Text('Mark as Returned'),
                           style: ElevatedButton.styleFrom(
@@ -444,7 +453,7 @@ class _AllBookingsList extends StatelessWidget {
                       ),
                     ),
                   ],
-                  
+
                   // Show review submitted badge if owner has reviewed
                   if (isCompleted && hasOwnerReviewed) ...[
                     const Divider(height: 1),
@@ -452,7 +461,8 @@ class _AllBookingsList extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                          Icon(Icons.check_circle,
+                              color: Colors.green[600], size: 20),
                           const SizedBox(width: 8),
                           Text(
                             'Review Submitted',
@@ -492,29 +502,31 @@ class _AllBookingsList extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator()),
+                builder: (_) =>
+                    const Center(child: CircularProgressIndicator()),
               );
-              
+
               try {
                 await BookingStatusService().markAsReturned(booking.id);
-                
+
                 if (!context.mounted) return;
                 Navigator.pop(context);
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Booking marked as returned. Awaiting reviews.'),
+                    content:
+                        Text('Booking marked as returned. Awaiting reviews.'),
                     backgroundColor: AppColors.success,
                   ),
                 );
               } catch (e) {
                 if (!context.mounted) return;
                 Navigator.pop(context);
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e')),
                 );
@@ -587,16 +599,14 @@ class _PendingBookingCard extends StatelessWidget {
                 ),
               ],
             ),
-            
             const Divider(height: 24),
-            
-            _buildInfoRow(Icons.calendar_today, 'Date', 
+            _buildInfoRow(Icons.calendar_today, 'Date',
                 '${booking.startDate.day}/${booking.startDate.month}/${booking.startDate.year}'),
-            _buildInfoRow(Icons.access_time, 'Time', '${booking.startTime} - ${booking.endTime}'),
-            _buildInfoRow(Icons.attach_money, 'Total', 'NZ\$${booking.totalPrice.toStringAsFixed(2)}'),
-            
+            _buildInfoRow(Icons.access_time, 'Time',
+                '${booking.startTime} - ${booking.endTime}'),
+            _buildInfoRow(Icons.attach_money, 'Total',
+                'NZ\$${booking.totalPrice.toStringAsFixed(2)}'),
             const SizedBox(height: 16),
-            
             Row(
               children: [
                 Expanded(
@@ -666,7 +676,8 @@ class _ActiveBookingCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   backgroundColor: AppColors.success.withOpacity(0.1),
-                  child: const Icon(Icons.play_circle, color: AppColors.success),
+                  child:
+                      const Icon(Icons.play_circle, color: AppColors.success),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -691,7 +702,8 @@ class _ActiveBookingCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -707,16 +719,14 @@ class _ActiveBookingCard extends StatelessWidget {
                 ),
               ],
             ),
-            
             const Divider(height: 24),
-            
-            _buildInfoRow(Icons.calendar_today, 'Start Date', 
+            _buildInfoRow(Icons.calendar_today, 'Start Date',
                 '${booking.startDate.day}/${booking.startDate.month}/${booking.startDate.year}'),
-            _buildInfoRow(Icons.access_time, 'Time', '${booking.startTime} - ${booking.endTime}'),
-            _buildInfoRow(Icons.attach_money, 'Total', 'NZ\$${booking.totalPrice.toStringAsFixed(2)}'),
-            
+            _buildInfoRow(Icons.access_time, 'Time',
+                '${booking.startTime} - ${booking.endTime}'),
+            _buildInfoRow(Icons.attach_money, 'Total',
+                'NZ\$${booking.totalPrice.toStringAsFixed(2)}'),
             const SizedBox(height: 16),
-            
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

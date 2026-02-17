@@ -109,17 +109,19 @@ class _MainNavigationState extends State<MainNavigation> {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ListEquipmentScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ListEquipmentScreen()),
                       );
                     },
                     icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Continue', style: TextStyle(fontSize: 18)),
+                    label:
+                        const Text('Continue', style: TextStyle(fontSize: 18)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
                   ),
@@ -204,8 +206,10 @@ class _MainNavigationState extends State<MainNavigation> {
               _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
               _buildNavItem(1, Icons.favorite, Icons.favorite_outline, 'Saved'),
               const SizedBox(width: 48), // Space for center button
-              _buildMessagesNavItem(3, Icons.chat_bubble, Icons.chat_bubble_outline, 'Messages'),
-              _buildNavItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
+              _buildMessagesNavItem(
+                  3, Icons.chat_bubble, Icons.chat_bubble_outline, 'Messages'),
+              _buildNavItem(4, Icons.person_rounded,
+                  Icons.person_outline_rounded, 'Profile'),
             ],
           ),
         ),
@@ -213,7 +217,8 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+  Widget _buildNavItem(
+      int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final isSelected = _currentIndex == index;
 
     return Expanded(
@@ -244,7 +249,8 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   // Special method for Messages with badge
-  Widget _buildMessagesNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+  Widget _buildMessagesNavItem(
+      int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final isSelected = _currentIndex == index;
 
     return Expanded(
@@ -262,7 +268,8 @@ class _MainNavigationState extends State<MainNavigation> {
                 builder: (context, snapshot) {
                   final count = snapshot.data ?? 0;
                   return Badge(
-                    isLabelVisible: count > 0 && !isSelected, // Hide when selected
+                    isLabelVisible:
+                        count > 0 && !isSelected, // Hide when selected
                     label: Text(
                       '$count',
                       style: const TextStyle(fontSize: 10),

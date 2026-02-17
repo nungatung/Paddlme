@@ -25,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<EquipmentModel> _filteredEquipment = [];
   EquipmentCategory? _selectedType;
   
-  // ✅ Unified search
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   
@@ -36,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showRightArrow = true;
   bool _isLoading = true;
   
-  // ✅ Location suggestions
   List<Map<String, dynamic>> _locationSuggestions = [];
   bool _showLocationSuggestions = false;
   Timer? _debounce;
@@ -47,8 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadEquipment();
     _checkBookingStatuses();
-  
-    
     _categoryScrollController.addListener(_updateArrowVisibility);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,8 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await statusService.checkAndActivateBookings();
     await statusService.checkAndCloseBookings();
   }
-
-
 
   void _updateArrowVisibility() {
     if (_categoryScrollController.hasClients) {
@@ -77,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode. dispose();
+    _searchFocusNode.dispose();
     _categoryScrollController.dispose();
     _debounce?.cancel();
     super.dispose();
@@ -87,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final equipment = await _equipmentService. getAllEquipment();
+      final equipment = await _equipmentService.getAllEquipment();
       
       debugPrint('✅ Loaded ${equipment.length} equipment from Firestore');
       
@@ -99,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Error loading equipment:  $e');
+      debugPrint('❌ Error loading equipment: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -125,17 +119,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // ��� UPDATED: Unified search that handles BOTH equipment and location
   void _searchEquipment(String query) {
-    // Cancel previous debounce
-    if (_debounce?.isActive ??  false) _debounce! .cancel();
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
     
-    // Debounce for location search
     _debounce = Timer(const Duration(milliseconds: 500), () async {
-      // Try location search if query looks like a location (3+ chars)
-      if (query.length >= 3 && ! _showLocationSuggestions) {
+      if (query.length >= 3 && !_showLocationSuggestions) {
         try {
-          final suggestions = await LocationService. searchLocation(query);
+          final suggestions = await LocationService.searchLocation(query);
           if (mounted && suggestions.isNotEmpty) {
             setState(() {
               _locationSuggestions = suggestions;
@@ -148,11 +138,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
     
-    // Immediate equipment search
     setState(() {
       if (query.isEmpty) {
         _showLocationSuggestions = false;
-        _locationSuggestions. clear();
+        _locationSuggestions.clear();
         
         if (_currentFilters.hasActiveFilters) {
           _applyFilters(_currentFilters);
@@ -162,11 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _filteredEquipment = _allEquipment;
         }
       } else {
-        // Search equipment by title, description, or location
         _filteredEquipment = _allEquipment.where((e) {
           final matchesSearch = e.title.toLowerCase().contains(query.toLowerCase()) ||
               e.location.toLowerCase().contains(query.toLowerCase()) ||
-              e.description. toLowerCase().contains(query.toLowerCase());
+              e.description.toLowerCase().contains(query.toLowerCase());
           
           final matchesType = _selectedType == null || e.category == _selectedType;
           final matchesFilters = _meetsFilterCriteria(e);
@@ -184,12 +172,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _showLocationSuggestions = false;
       _locationSuggestions.clear();
       
-      // Filter by location
       _filteredEquipment = _allEquipment.where((equipment) {
         return equipment.location.toLowerCase().contains(locationName.toLowerCase());
       }).toList();
       
-      debugPrint('🗺️ Filtered by location: $locationName (${_filteredEquipment. length} results)');
+      debugPrint('🗺️ Filtered by location: $locationName (${_filteredEquipment.length} results)');
     });
     
     _searchFocusNode.unfocus();
@@ -217,13 +204,13 @@ class _HomeScreenState extends State<HomeScreen> {
       
       _filteredEquipment = _allEquipment.where((equipment) {
         if (query.isNotEmpty) {
-          final matchesSearch = equipment.title. toLowerCase().contains(query.toLowerCase()) ||
+          final matchesSearch = equipment.title.toLowerCase().contains(query.toLowerCase()) ||
               equipment.location.toLowerCase().contains(query.toLowerCase()) ||
-              equipment.description. toLowerCase().contains(query.toLowerCase());
-          if (! matchesSearch) return false;
+              equipment.description.toLowerCase().contains(query.toLowerCase());
+          if (!matchesSearch) return false;
         }
         
-        if (filters.types != null && filters.types! .isNotEmpty) {
+        if (filters.types != null && filters.types!.isNotEmpty) {
           if (!filters.types!.contains(equipment.category)) return false;
         }
 
@@ -246,8 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _meetsFilterCriteria(EquipmentModel equipment) {
     if (!_currentFilters.hasActiveFilters) return true;
 
-    if (_currentFilters.types != null && _currentFilters.types!. isNotEmpty) {
-      if (!_currentFilters.types! .contains(equipment.category)) return false;
+    if (_currentFilters.types != null && _currentFilters.types!.isNotEmpty) {
+      if (!_currentFilters.types!.contains(equipment.category)) return false;
     }
 
     if (_currentFilters.minPrice != null && equipment.pricePerHour < _currentFilters.minPrice!) {
@@ -257,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
 
-    if (_currentFilters.minRating != null && equipment.rating < _currentFilters. minRating!) {
+    if (_currentFilters.minRating != null && equipment.rating < _currentFilters.minRating!) {
       return false;
     }
 
@@ -288,7 +275,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return GestureDetector(
       onTap: () {
-        // Hide suggestions when tapping outside
         if (_showLocationSuggestions) {
           setState(() {
             _showLocationSuggestions = false;
@@ -296,31 +282,85 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         _searchFocusNode.unfocus();
       },
-      child:  Scaffold(
-        backgroundColor: Colors.grey[50],
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA), // Subtle blue-gray tint
         body: SafeArea(
           child: Column(
             children: [
-              // Header
+              // Enhanced Header
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Colors.white,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(24),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Column(
-                  crossAxisAlignment:  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  
+                    // Welcome text
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.waves,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Welcome back! 👋',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Find your next adventure',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
                     const SizedBox(height: 16),
 
-                    // ✅ Active Location Filter Badge
+                    // Active Location Filter Badge
                     if (_selectedLocation != null)
                       Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.primary. withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.primary. withOpacity(0.3),
+                            color: AppColors.primary.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
@@ -334,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.primary,
-                                  fontWeight:  FontWeight.w500,
+                                  fontWeight: FontWeight.w500,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -343,151 +383,218 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(width: 6),
                             InkWell(
                               onTap: _clearLocationFilter,
-                              child:  const Icon(
-                                Icons.close,
-                                size: 16,
-                                color: AppColors.primary,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 14,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                    // ✅ Unified Search Bar
+                    // Enhanced Search Bar
                     Column(
                       children: [
-                        TextField(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          onChanged: _searchEquipment,
-                          decoration:  InputDecoration(
-                            hintText: 'Search equipment or location...',
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius. circular(12),
-                              borderSide: BorderSide. none,
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _searchFocusNode.hasFocus 
+                                  ? AppColors.primary.withOpacity(0.3)
+                                  : Colors.transparent,
+                              width: 2,
                             ),
-                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                            suffixIcon: Row(
-                              mainAxisSize:  MainAxisSize.min,
-                              children: [
-                                if (_searchController.text.isNotEmpty)
-                                  IconButton(
-                                    icon: const Icon(Icons.clear, color: Colors.grey),
-                                    onPressed: () {
-                                      setState(() {
-                                        _searchController.clear();
-                                        _showLocationSuggestions = false;
-                                        _locationSuggestions.clear();
-                                        _filteredEquipment = _allEquipment;
-                                      });
-                                    },
-                                  ),
-                                IconButton(
-                                  icon: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      const Icon(Icons.tune, color: AppColors.primary),
-                                      if (_currentFilters.hasActiveFilters)
-                                        Positioned(
-                                          right: -2,
-                                          top: -2,
-                                          child:  Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: const BoxDecoration(
-                                              color: AppColors.error,
-                                              shape: BoxShape.circle,
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            focusNode: _searchFocusNode,
+                            onChanged: _searchEquipment,
+                            decoration: InputDecoration(
+                              hintText: 'Search equipment or location...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 15,
+                              ),
+                              border: InputBorder.none,
+                              prefixIcon: Container(
+                                margin: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.search,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                              ),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_searchController.text.isNotEmpty)
+                                    IconButton(
+                                      icon: Icon(Icons.clear, color: Colors.grey[400]),
+                                      onPressed: () {
+                                        setState(() {
+                                          _searchController.clear();
+                                          _showLocationSuggestions = false;
+                                          _locationSuggestions.clear();
+                                          _filteredEquipment = _allEquipment;
+                                        });
+                                      },
+                                    ),
+                                  Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            backgroundColor: Colors.transparent,
+                                            builder: (context) => FilterBottomSheet(
+                                              initialFilters: _currentFilters,
+                                              onApply: _applyFilters,
                                             ),
-                                            constraints: const BoxConstraints(
-                                              minWidth: 16,
-                                              minHeight:  16,
-                                            ),
-                                            child: Text(
-                                              '${_currentFilters.activeFilterCount}',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 9,
-                                                fontWeight:  FontWeight.bold,
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: _currentFilters.hasActiveFilters
+                                                ? AppColors.primary.withOpacity(0.1)
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Stack(
+                                            clipBehavior: Clip.none,
+                                            children: [
+                                              Icon(
+                                                Icons.tune,
+                                                color: _currentFilters.hasActiveFilters
+                                                    ? AppColors.primary
+                                                    : Colors.grey[600],
+                                                size: 24,
                                               ),
-                                              textAlign: TextAlign.center,
-                                            ),
+                                              if (_currentFilters.hasActiveFilters)
+                                                Positioned(
+                                                  right: -4,
+                                                  top: -4,
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(4),
+                                                    decoration: const BoxDecoration(
+                                                      color: AppColors.error,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    constraints: const BoxConstraints(
+                                                      minWidth: 18,
+                                                      minHeight: 18,
+                                                    ),
+                                                    child: Text(
+                                                      '${_currentFilters.activeFilterCount}',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                      textAlign: TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-                                    ],
-                                  ),
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => FilterBottomSheet(
-                                        initialFilters: _currentFilters,
-                                        onApply: _applyFilters,
                                       ),
-                                    );
-                                  },
-                                ),
-                              ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
                           ),
                         ),
 
-                        // ✅ Location Suggestions Dropdown
+                        // Location Suggestions Dropdown
                         if (_showLocationSuggestions && _locationSuggestions.isNotEmpty)
                           Container(
                             margin: const EdgeInsets.only(top: 8),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey[200]!),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             constraints: const BoxConstraints(maxHeight: 200),
                             child: Column(
-                              crossAxisAlignment:  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Padding(
-                                  padding:  const EdgeInsets.all(12),
-                                  child: Text(
-                                    'Locations',
-                                    style: TextStyle(
-                                      fontSize:  12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[600],
-                                    ),
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Locations',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 Flexible(
                                   child: ListView.separated(
                                     shrinkWrap: true,
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    itemCount:  _locationSuggestions.length,
+                                    itemCount: _locationSuggestions.length,
                                     separatorBuilder: (context, index) => Divider(
                                       height: 1,
                                       color: Colors.grey[200],
+                                      indent: 16,
+                                      endIndent: 16,
                                     ),
                                     itemBuilder: (context, index) {
                                       final suggestion = _locationSuggestions[index];
                                       return ListTile(
                                         dense: true,
-                                        leading: Text(
-                                          suggestion['type_icon'] ?? '📍',
-                                          style:  const TextStyle(fontSize: 18),
+                                        leading: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            suggestion['type_icon'] ?? '📍',
+                                            style: const TextStyle(fontSize: 18),
+                                          ),
                                         ),
                                         title: Text(
                                           suggestion['display_name'] ?? '',
                                           style: const TextStyle(
                                             fontSize: 14,
-                                            fontWeight:  FontWeight.w500,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -497,7 +604,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 suggestion['place_type'],
                                                 style: TextStyle(
                                                   fontSize: 11,
-                                                  color:  Colors.grey[600],
+                                                  color: Colors.grey[600],
                                                 ),
                                               )
                                             : null,
@@ -516,13 +623,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Category Chips
+                    // Enhanced Category Chips
                     SizedBox(
-                      height: 42,
+                      height: 48,
                       child: Stack(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(left: 16, right: 40), // Reduced left padding, keep right for arrow
+                            padding: const EdgeInsets.only(left: 4, right: 40),
                             child: SingleChildScrollView(
                               controller: _categoryScrollController,
                               scrollDirection: Axis.horizontal,
@@ -530,15 +637,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Row(
                                 children: [
                                   _buildCategoryChip('All', null, Icons.waves),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 10),
                                   _buildCategoryChip('Kayaks', EquipmentCategory.kayak, Icons.kayaking),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 10),
                                   _buildCategoryChip('SUPs', EquipmentCategory.sup, Icons.surfing),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 10),
                                   _buildCategoryChip('Jet Skis', EquipmentCategory.jetSki, Icons.directions_boat),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 10),
                                   _buildCategoryChip('Boats', EquipmentCategory.boat, Icons.directions_boat_filled),
-                                  const SizedBox(width: 16), // Extra padding at end
+                                  const SizedBox(width: 16),
                                 ],
                               ),
                             ),
@@ -550,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               top: 0,
                               bottom: 0,
                               child: Container(
-                                width: 32,
+                                width: 40,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -561,15 +668,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Center(
                                   child: Container(
-                                    width: 28,
-                                    height: 28,
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 4,
+                                          blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
                                       ],
@@ -608,15 +715,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: Center(
                                   child: Container(
-                                    width: 28,
-                                    height: 28,
+                                    width: 32,
+                                    height: 32,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 4,
+                                          blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
                                       ],
@@ -644,26 +751,53 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
+              // Results Count
+              if (!_isLoading && _filteredEquipment.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${_filteredEquipment.length} ${_filteredEquipment.length == 1 ? 'item' : 'items'} found',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Equipment Grid
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _loadEquipment,
+                  color: AppColors.primary,
+                  backgroundColor: Colors.white,
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _filteredEquipment.isEmpty
                           ? _buildEmptyState()
                           : GridView.builder(
                               padding: const EdgeInsets.only(
-                                left: 12,
-                                right: 12,
-                                top: 12,
+                                left: 16,
+                                right: 16,
+                                top: 8,
                                 bottom: 100,
                               ),
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
                                 childAspectRatio: 0.72,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
                               itemCount: _filteredEquipment.length,
                               itemBuilder: (context, index) {
@@ -674,7 +808,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => EquipmentDetailScreen(
-                                          equipment: _filteredEquipment[index], equipmentId: '',
+                                          equipment: _filteredEquipment[index], 
+                                          equipmentId: '',
                                         ),
                                       ),
                                     );
@@ -703,11 +838,18 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(40),
         children: [
           const SizedBox(height: 60),
-          Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+          ),
           const SizedBox(height: 24),
           Text(
             'No equipment found',
-            style:  TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.grey[700],
@@ -724,24 +866,29 @@ class _HomeScreenState extends State<HomeScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          ElevatedButton. icon(
-            onPressed: () {
-              setState(() {
-                _currentFilters = EquipmentFilters();
-                _selectedType = null;
-                _selectedLocation = null;
-                _searchController.clear();
-                _filteredEquipment = _allEquipment;
-              });
-            },
-            icon: const Icon(Icons.clear_all),
-            label: const Text('Clear Filters'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 16,
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _currentFilters = EquipmentFilters();
+                  _selectedType = null;
+                  _selectedLocation = null;
+                  _searchController.clear();
+                  _filteredEquipment = _allEquipment;
+                });
+              },
+              icon: const Icon(Icons.clear_all),
+              label: const Text('Clear Filters'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -756,7 +903,14 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withOpacity(0.2),
+                AppColors.primaryLight.withOpacity(0.1),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -776,7 +930,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Be the first to list your water sports equipment and start earning! ',
+          'Be the first to list your water sports equipment and start earning!',
           style: TextStyle(
             fontSize: 17,
             color: Colors.grey[600],
@@ -785,7 +939,7 @@ class _HomeScreenState extends State<HomeScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        ElevatedButton. icon(
+        ElevatedButton.icon(
           onPressed: () async {
             final result = await Navigator.push(
               context,
@@ -805,7 +959,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
-            foregroundColor: Colors. white,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(
               horizontal: 40,
               vertical: 20,
@@ -813,17 +967,21 @@ class _HomeScreenState extends State<HomeScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            elevation: 0,
           ),
         ),
         const SizedBox(height: 16),
-        OutlinedButton. icon(
+        OutlinedButton.icon(
           onPressed: _loadEquipment,
-          icon:  const Icon(Icons.refresh),
+          icon: const Icon(Icons.refresh),
           label: const Text('Refresh'),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(
               horizontal: 32,
               vertical: 16,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
@@ -831,30 +989,61 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryChip(String label, EquipmentCategory?  type, IconData icon) {
+  Widget _buildCategoryChip(String label, EquipmentCategory? type, IconData icon) {
     final isSelected = _selectedType == type;
 
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: isSelected ? Colors.white : AppColors.primary),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) => _filterByType(selected ?  type : null),
-      backgroundColor:  Colors.white,
-      selectedColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white :  Colors.black87,
-        fontWeight: FontWeight.w600,
-      ),
-      side: BorderSide(
-        color: isSelected ? AppColors.primary : Colors.grey[300]!,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _filterByType(isSelected ? null : type),
+        borderRadius: BorderRadius.circular(25),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.grey[300]!,
+              width: 1.5,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? Colors.white : AppColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
-  
 }

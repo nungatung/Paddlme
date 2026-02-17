@@ -72,7 +72,7 @@ class NotificationsScreen extends StatelessWidget {
               return _NotificationTile(
                 notification: notification,
                 onTap: () async {
-                  await NotificationService().markAsRead(notification.id);
+                  await NotificationService().markAsRead(notification.userId, notification.id);
                   
                   if (notification.bookingId != null && context.mounted) {
                     Navigator.push(

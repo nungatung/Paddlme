@@ -194,7 +194,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             // App Name
                             Text(
                               'Paddlme',
-                              style: GoogleFonts.museoModerno( 
+                              style: TextStyle(
+                                fontFamily: 'GlacialIndifference', 
                                 fontSize: isTablet ? 52 : 42,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
@@ -208,6 +209,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             Text(
                               'Share the Waves',
                               style: TextStyle(
+                                fontFamily: 'GlacialIndifference', 
                                 fontSize: isTablet ? 20 : 16,
                                 color: Colors.white70,
                                 fontWeight: FontWeight.w300,
@@ -234,6 +236,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         Text(
                           'Rent kayaks, SUP boards & more from Aotearoa locals',
                           style: TextStyle(
+                            fontFamily: 'GlacialIndifference', 
                             fontSize: isTablet ? 18 : 16,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w400,
@@ -265,6 +268,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               Text(
                                 'Get Started',
                                 style: TextStyle(
+                                  fontFamily: 'GlacialIndifference', 
                                   fontSize: isTablet ? 20 : 18,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -293,6 +297,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           child: Text(
                             'Already have an account? Log In',
                             style: TextStyle(
+                              fontFamily: 'GlacialIndifference', 
                               fontSize: isTablet ? 14 : 12,
                               fontWeight: FontWeight.w400,
                             ),

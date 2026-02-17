@@ -427,12 +427,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            // TODO: Navigate to all bookings
-                          },
-                          child: const Text('View All'),
-                        ),
                       ],
                     ),
 

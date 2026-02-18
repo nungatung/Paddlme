@@ -777,7 +777,7 @@ class _ListEquipmentScreenState extends State<ListEquipmentScreen> with SingleTi
 
                   _currentStep == 0
                     ? SizedBox(
-                        width: 220,
+                        width: 240,
                         child: ElevatedButton(
                           onPressed: _nextStep,
                           style: ElevatedButton.styleFrom(

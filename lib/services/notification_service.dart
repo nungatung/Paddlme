@@ -215,7 +215,7 @@ class NotificationService {
 
   Future<void> markAllAsRead(String userId) async {
     final batch = FirebaseFirestore.instance.batch();
-    final unreadNotifications = await FirebaseFirestore.instance
+    final unreadNotifications = await FirebaseFirestore.instance 
         .collection('users')
         .doc(userId)
         .collection('notifications')

@@ -108,7 +108,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           }
         });
 
-        // Safety timeout - stop loading after 2 seconds regardless
         await Future.delayed(const Duration(seconds: 2));
         if (mounted && !_bookingsStreamInitialized) {
           setState(() => _isLoadingBookings = false);
@@ -140,7 +139,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
     }
   }
-
 
   @override
   void dispose() {
@@ -198,79 +196,106 @@ class _ProfileScreenState extends State<ProfileScreen>
         .toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
             // Profile Header
             SliverToBoxAdapter(
               child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
                   children: [
+                    const SizedBox(height: 24),
+                    
                     // Avatar with Edit Button
                     Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.grey[200],
-                          backgroundImage: _currentUser!.profileImageUrl != null
-                              ? NetworkImage(_currentUser!.profileImageUrl!)
-                              : null,
-                          child: _currentUser!.profileImageUrl == null
-                              ? Icon(Icons.person,
-                                  size: 50, color: Colors.grey[400])
-                              : null,
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.2),
+                                blurRadius: 20,
+                                spreadRadius: 4,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 54,
+                            backgroundColor: Colors.grey[100],
+                            backgroundImage: _currentUser!.profileImageUrl != null
+                                ? NetworkImage(_currentUser!.profileImageUrl!)
+                                : null,
+                            child: _currentUser!.profileImageUrl == null
+                                ? Icon(Icons.person, size: 54, color: Colors.grey[400])
+                                : null,
+                          ),
                         ),
                         Positioned(
-                          bottom: 0,
-                          right: 0,
+                          bottom: 4,
+                          right: 4,
                           child: GestureDetector(
                             onTap: () async {
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      EditProfileScreen(user: _currentUser!),
+                                  builder: (_) => EditProfileScreen(user: _currentUser!),
                                 ),
                               );
-
-                              if (result == true) {
-                                _loadUserData();
-                              }
+                              if (result == true) _loadUserData();
                             },
                             child: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: AppColors.primary,
+                                gradient: LinearGradient(
+                                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                                 shape: BoxShape.circle,
-                                border:
-                                    Border.all(color: Colors.white, width: 3),
+                                border: Border.all(color: Colors.white, width: 3),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              child: const Icon(
-                                Icons.edit,
-                                size: 16,
-                                color: Colors.white,
-                              ),
+                              child: const Icon(Icons.edit, size: 18, color: Colors.white),
                             ),
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
                     // Name
                     Text(
                       _currentUser!.name,
                       style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
                     ),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
 
                     // Email
                     Text(
@@ -278,30 +303,38 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: TextStyle(
                         fontSize: 15,
                         color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
 
-                    // Location (if set)
+                    // Location
                     if (_currentUser!.location != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            _currentUser!.location!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                            const SizedBox(width: 6),
+                            Text(
+                              _currentUser!.location!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
                     // Rating
                     GestureDetector(
@@ -314,133 +347,181 @@ class _ProfileScreenState extends State<ProfileScreen>
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.accent.withOpacity(0.15),
+                              AppColors.accent.withOpacity(0.05),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: AppColors.accent.withOpacity(0.2)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star, size: 18, color: AppColors.accent),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.star, size: 18, color: AppColors.accent),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '${_currentUser!.displayRating}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.accent,
+                              ),
+                            ),
                             const SizedBox(width: 6),
                             Text(
-                              '${_currentUser!.displayRating} (${_currentUser!.reviewCount} reviews)',
-                              style: const TextStyle(
+                              '(${_currentUser!.reviewCount} reviews)',
+                              style: TextStyle(
                                 fontSize: 14,
+                                color: Colors.grey[600],
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Icon(Icons.chevron_right, size: 18, color: Colors.grey[400]),
                           ],
                         ),
                       ),
                     ),
 
-                    // Bio (if set)
-                    if (_currentUser!.bio != null &&
-                        _currentUser!.bio!.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        _currentUser!.bio!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
+                    // Bio
+                    if (_currentUser!.bio != null && _currentUser!.bio!.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey[200]!),
                         ),
-                        textAlign: TextAlign.center,
+                        child: Text(
+                          _currentUser!.bio!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
 
                     const SizedBox(height: 24),
 
-                    // Quick Stats with Manage Bookings badge
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const OwnerBookingsScreen(userId: '',),
-                                ),
-                              );
-                              // Refresh data when returning
-                              _loadOwnerBookings();
-                            },
-                            child: Column(
-                              children: [
-                                Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    _buildStatCard(
-                                      Icons.calendar_today,
-                                      // Show count of pending bookings
-                                      _ownerBookings
-                                          .where((b) => b.status == BookingStatus.pending)
-                                          .length
-                                          .toString(),
-                                      'Requests',
-                                      AppColors.primary,
-                                    ),                                    
-                                  ],
-                                ),
-                              ],
+                    // Quick Stats
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const OwnerBookingsScreen(userId: ''),
+                                  ),
+                                );
+                                _loadOwnerBookings();
+                              },
+                              child: _buildStatCard(
+                                Icons.calendar_today_rounded,
+                                _ownerBookings
+                                    .where((b) => b.status == BookingStatus.pending)
+                                    .length
+                                    .toString(),
+                                'Requests',
+                                AppColors.primary,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildStatCard(
-                            Icons.inventory_2_outlined,
-                            _userListings.length.toString(),
-                            'Listings',
-                            AppColors.accent,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildStatCard(
+                              Icons.inventory_2_outlined,
+                              _userListings.length.toString(),
+                              'Listings',
+                              AppColors.accent,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-
             // My Bookings Section
             SliverToBoxAdapter(
               child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'My Bookings',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.calendar_today_rounded, color: AppColors.primary),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 14),
+                          const Text(
+                            'My Bookings',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Tabs
                     TabBar(
                       controller: _tabController,
                       labelColor: AppColors.primary,
-                      unselectedLabelColor: Colors.grey[600],
+                      unselectedLabelColor: Colors.grey[500],
                       indicatorColor: AppColors.primary,
+                      indicatorWeight: 3,
                       labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: 14,
                       ),
                       tabs: [
                         Tab(text: 'Upcoming (${upcomingBookings.length})'),
@@ -448,166 +529,170 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Tab(text: 'Past (${pastBookings.length})'),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Container(
+                      constraints: const BoxConstraints(minHeight: 200, maxHeight: 500),
+                      child: _isLoadingBookings
+                          ? const Center(child: CircularProgressIndicator())
+                          : TabBarView(
+                              controller: _tabController,
+                              children: [
+                                upcomingBookings.isEmpty
+                                    ? _buildEmptyState(Icons.calendar_today, 'No Upcoming Bookings', 'Your upcoming rentals will appear here')
+                                    : ListView.builder(
+                                        padding: const EdgeInsets.all(16),
+                                        shrinkWrap: true,
+                                        physics: const ClampingScrollPhysics(),
+                                        itemCount: upcomingBookings.length,
+                                        itemBuilder: (context, index) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: BookingCard(booking: upcomingBookings[index]),
+                                        ),
+                                      ),
+                                activeBookings.isEmpty
+                                    ? _buildEmptyState(Icons.play_circle_outline, 'No Active Bookings', 'Your active rentals will appear here')
+                                    : ListView.builder(
+                                        padding: const EdgeInsets.all(16),
+                                        shrinkWrap: true,
+                                        physics: const ClampingScrollPhysics(),
+                                        itemCount: activeBookings.length,
+                                        itemBuilder: (context, index) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: BookingCard(booking: activeBookings[index]),
+                                        ),
+                                      ),
+                                pastBookings.isEmpty
+                                    ? _buildEmptyState(Icons.history, 'No Past Bookings', 'Your rental history will appear here')
+                                    : ListView.builder(
+                                        padding: const EdgeInsets.all(16),
+                                        shrinkWrap: true,
+                                        physics: const ClampingScrollPhysics(),
+                                        itemCount: pastBookings.length,
+                                        itemBuilder: (context, index) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: BookingCard(booking: pastBookings[index]),
+                                        ),
+                                      ),
+                              ],
+                            ),
+                    ),
                   ],
                 ),
               ),
             ),
 
-            // Bookings List
-            SliverToBoxAdapter(
-              child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                constraints: const BoxConstraints(
-                  minHeight: 200,
-                  maxHeight: 500,
-                ),
-                child: _isLoadingBookings
-                    ? const Center(child: CircularProgressIndicator())
-                    : TabBarView(
-                        controller: _tabController,
-                        children: [
-                          // Upcoming Bookings
-                          upcomingBookings.isEmpty
-                              ? _buildEmptyState(Icons.calendar_today, 'No Upcoming Bookings', 'Your upcoming rentals will appear here')
-                              : ListView.builder(
-                                  padding: const EdgeInsets.only(
-                                      top: 16, bottom: 16),
-                                  shrinkWrap: true,
-                                  physics: const ClampingScrollPhysics(),
-                                  itemCount: upcomingBookings.length,
-                                  itemBuilder: (context, index) {
-                                    return BookingCard(
-                                        booking: upcomingBookings[index]);
-                                  },
-                                ),
-                          
-                          // NEW: Active Bookings
-                          activeBookings.isEmpty
-                              ? _buildEmptyState(
-                                  Icons.play_circle_outline,
-                                  'No Active Bookings',
-                                  'Your active rentals will appear here',
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.only(top: 16, bottom: 16),
-                                  shrinkWrap: true,
-                                  physics: const ClampingScrollPhysics(),
-                                  itemCount: activeBookings.length,
-                                  itemBuilder: (context, index) {
-                                    return BookingCard(booking: activeBookings[index]);
-                                  },
-                                ),
-
-                          // Past Bookings
-                          pastBookings.isEmpty
-                              ? _buildEmptyState(
-                                  Icons.history,
-                                  'No Past Bookings',
-                                  'Your rental history will appear here',
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.only(
-                                      top: 16, bottom: 16),
-                                  shrinkWrap: true,
-                                  physics: const ClampingScrollPhysics(),
-                                  itemCount: pastBookings.length,
-                                  itemBuilder: (context, index) {
-                                    return BookingCard(
-                                        booking: pastBookings[index]);
-                                  },
-                                ),
-                        ],
-                      ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
             // My Listings Section
             SliverToBoxAdapter(
               child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.fromLTRB(20, 20, 0, 20),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(right: 20),
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'My Listings',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.inventory_2_outlined, color: Colors.orange[700]),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Text(
+                              'My Listings',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                              ),
                             ),
                           ),
-                          TextButton.icon(
+                          ElevatedButton.icon(
                             onPressed: () async {
                               final result = await Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ListEquipmentScreen(),
-                                ),
+                                MaterialPageRoute(builder: (_) => const ListEquipmentScreen()),
                               );
-
-                              if (result == true) {
-                                _loadUserListings();
-                              }
+                              if (result == true) _loadUserListings();
                             },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add'),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add', style: TextStyle(fontWeight: FontWeight.w700)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     _isLoadingListings
                         ? const Padding(
                             padding: EdgeInsets.all(40),
                             child: Center(child: CircularProgressIndicator()),
                           )
                         : _userListings.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.only(right: 20),
-                                child: _buildEmptyState(
-                                  Icons.inventory_2_outlined,
-                                  'No Listings Yet',
-                                  'List your equipment to start earning',
-                                ),
-                              )
+                            ? _buildEmptyState(Icons.inventory_2_outlined, 'No Listings Yet', 'List your equipment to start earning')
                             : Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   SizedBox(
-                                    height: 250,
+                                    height: 280,
                                     child: ListView.builder(
                                       scrollDirection: Axis.horizontal,
                                       physics: const BouncingScrollPhysics(),
-                                      padding: const EdgeInsets.only(right: 20),
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
                                       itemCount: _userListings.length,
                                       itemBuilder: (context, index) {
                                         return Container(
-                                          width: 180,
-                                          margin:
-                                              const EdgeInsets.only(right: 12),
-                                          child: EquipmentCard(
-                                            equipment: _userListings[index],
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      EquipmentDetailScreen(
-                                                    equipment:
-                                                        _userListings[index],
-                                                    equipmentId: '',
+                                          width: 200,
+                                          margin: const EdgeInsets.only(right: 16),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(20),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.06),
+                                                blurRadius: 16,
+                                                offset: const Offset(0, 6),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(20),
+                                            child: EquipmentCard(
+                                              equipment: _userListings[index],
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => EquipmentDetailScreen(
+                                                      equipment: _userListings[index],
+                                                      equipmentId: '',
+                                                    ),
                                                   ),
-                                                ),
-                                              );
-                                            },
+                                                );
+                                              },
+                                            ),
                                           ),
                                         );
                                       },
@@ -615,22 +700,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ),
                                   if (_userListings.length > 1)
                                     Padding(
-                                      padding: const EdgeInsets.only(
-                                          top: 12, right: 20),
+                                      padding: const EdgeInsets.only(top: 16, bottom: 20),
                                       child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.swipe,
-                                              size: 16,
-                                              color: Colors.grey[400]),
+                                          Icon(Icons.swipe, size: 16, color: Colors.grey[400]),
                                           const SizedBox(width: 8),
                                           Text(
                                             'Swipe to see more',
                                             style: TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 13,
                                               color: Colors.grey[500],
-                                              fontStyle: FontStyle.italic,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -643,83 +724,61 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
             // Settings Section
             SliverToBoxAdapter(
               child: Container(
-                color: Colors.white,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
                   children: [
-                    _buildSettingItem(
-                      Icons.person_outline,
-                      'Account Settings',
-                      () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                EditProfileScreen(user: _currentUser!),
-                          ),
-                        );
-
-                        if (result == true) {
-                          _loadUserData();
-                        }
-                      },
-                    ),
-                    
-                    _buildSettingItem(
-                      Icons.calendar_today_outlined,
-                      'Manage Bookings',
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const OwnerBookingsScreen(userId: '',),
-                          ),
-                        );
-                      },
-                    ),
-                    
+                    _buildSettingItem(Icons.person_outline, 'Account Settings', () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => EditProfileScreen(user: _currentUser!)),
+                      );
+                      if (result == true) _loadUserData();
+                    }),
+                    _buildDivider(),
+                    _buildSettingItem(Icons.calendar_today_outlined, 'Manage Bookings', () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const OwnerBookingsScreen(userId: '')),
+                      );
+                    }),
+                    _buildDivider(),
                     _buildNotificationSettingItem(context),
-                    
-                    _buildSettingItem(
-                      Icons.payment_outlined,
-                      'Payment Methods',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Payment Methods coming soon!')),
-                        );
-                      },
-                    ),
-                    _buildSettingItem(
-                      Icons.help_outline,
-                      'Help & Support',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Help & Support coming soon!')),
-                        );
-                      },
-                    ),
-                    _buildSettingItem(
-                      Icons.description_outlined,
-                      'Terms & Privacy',
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Terms & Privacy coming soon!')),
-                        );
-                      },
-                    ),
-                    _buildSettingItem(
-                      Icons.logout,
-                      'Logout',
-                      () => _showLogoutDialog(context),
-                      isDestructive: true,
-                    ),
+                    _buildDivider(),
+                    _buildSettingItem(Icons.payment_outlined, 'Payment Methods', () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Payment Methods coming soon!')),
+                      );
+                    }),
+                    _buildDivider(),
+                    _buildSettingItem(Icons.help_outline, 'Help & Support', () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Help & Support coming soon!')),
+                      );
+                    }),
+                    _buildDivider(),
+                    _buildSettingItem(Icons.description_outlined, 'Terms & Privacy', () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Terms & Privacy coming soon!')),
+                      );
+                    }),
+                    _buildDivider(),
+                    _buildSettingItem(Icons.logout, 'Logout', () => _showLogoutDialog(context), isDestructive: true),
                   ],
                 ),
               ),
@@ -732,26 +791,37 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildStatCard(
-      IconData icon, String value, String label, Color color, {String? subtitle}) {
+  Widget _buildStatCard(IconData icon, String value, String label, Color color) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.15),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
               color: color,
             ),
           ),
@@ -759,100 +829,68 @@ class _ProfileScreenState extends State<ProfileScreen>
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w700,
             ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
+  Widget _buildDivider() {
+    return Divider(height: 1, indent: 20, endIndent: 20, color: Colors.grey[200]);
+  }
+
   Widget _buildNotificationSettingItem(BuildContext context) {
     return ListTile(
-      leading: Icon(
-        Icons.notifications_outlined,
-        color: Colors.grey[700],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(Icons.notifications_outlined, color: Colors.blue[700], size: 22),
       ),
       title: const Text(
         'Notifications',
-        style: TextStyle(
-          fontSize: 16,
-          color: Colors.black87,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Notification Badge with error handling
           StreamBuilder<int>(
             stream: NotificationService().getUnreadCount(_currentUser!.uid),
             builder: (context, snapshot) {
-              // Show error if any
-              if (snapshot.hasError) {
-                debugPrint('Badge stream error: ${snapshot.error}');
-                return Icon(Icons.error, color: Colors.red, size: 20);
-              }
-              
+              if (snapshot.hasError) return const SizedBox.shrink();
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                );
+                return const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2));
               }
-              
               final count = snapshot.data ?? 0;
-              debugPrint('Unread count: $count');
-              
               if (count == 0) return const SizedBox.shrink();
-              
               return Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                constraints: const BoxConstraints(
-                  minWidth: 24,
-                  minHeight: 24,
-                ),
                 child: Text(
                   count > 99 ? '99+' : '$count',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
                 ),
               );
             },
           ),
-          Icon(
-            Icons.chevron_right,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.chevron_right, color: Colors.grey[400]),
         ],
       ),
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => NotificationsScreen(userId: _currentUser!.uid),
-          ),
+          MaterialPageRoute(builder: (_) => NotificationsScreen(userId: _currentUser!.uid)),
         );
       },
     );
@@ -861,27 +899,27 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildEmptyState(IconData icon, String title, String subtitle) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 48, color: Colors.grey[400]),
+            ),
+            const SizedBox(height: 20),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.grey[700]),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500], fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
           ],
@@ -890,24 +928,26 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildSettingItem(IconData icon, String title, VoidCallback onTap,
-      {bool isDestructive = false}) {
+  Widget _buildSettingItem(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? AppColors.error : Colors.grey[700],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDestructive ? AppColors.error.withOpacity(0.1) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: isDestructive ? AppColors.error : Colors.grey[700], size: 22),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
+          fontWeight: FontWeight.w600,
           color: isDestructive ? AppColors.error : Colors.black87,
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: Colors.grey[400],
-      ),
+      trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
       onTap: onTap,
     );
   }
@@ -916,12 +956,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w800)),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           TextButton(
             onPressed: () async {
@@ -934,7 +975,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Logout'),
+            child: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

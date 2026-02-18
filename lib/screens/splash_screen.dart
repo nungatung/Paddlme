@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import '../core/theme/app_colors.dart';
 import 'onboarding/onboarding_screen.dart';
 import 'auth/login_screen.dart';  
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart'; 
 
 class SplashScreen extends StatefulWidget {
@@ -16,47 +15,87 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _waveController;
+  late AnimationController _breatheController;
+  late AnimationController _shimmerController;
+  
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _breatheAnimation;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
     
-    // Fade/scale animation for logo
+    // Main fade/scale animation
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
+      CurvedAnimation(
+        parent: _fadeController, 
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.elasticOut),
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeController, 
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
+      ),
     );
 
-    // Wave animation (continuous)
+    // Subtle breathing animation for logo
+    _breatheController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    );
+    
+    _breatheAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(
+        parent: _breatheController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+
+    // Shimmer for button
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(
+        parent: _shimmerController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+
+    // Wave animation
     _waveController = AnimationController(
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 4),
       vsync: this,
     )..repeat();
 
-    _fadeController.forward();
-
+    // Sequence the animations
+    _fadeController.forward().then((_) {
+      _breatheController.repeat(reverse: true);
+      _shimmerController.repeat();
+    });
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _waveController.dispose();
+    _breatheController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
-  // ✅ UPDATED: Manual navigation (if button is pressed)
   void _navigateToOnboarding() async {
-    // Mark that user has seen onboarding
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenOnboarding', true);
 
@@ -66,258 +105,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => const OnboardingScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
-          return SlideTransition(position: offsetAnimation, child: child);
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
         },
         transitionDuration: const Duration(milliseconds: 500),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    
-    // ✅ THREE SIZE TIERS
-    final isTablet = screenWidth > 600;
-    final isLargeTablet = screenWidth > 1000;
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Blue Top Section
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom:  MediaQuery.of(context).size.height * (isTablet ?  0.35 : 0.4),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primaryLight,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // White Bottom Section
-          Positioned(
-            top: MediaQuery.of(context).size.height * (isTablet ? 0.65 :  0.6),
-            left: 0,
-            right:  0,
-            bottom: 0,
-            child: Container(
-              color: Colors.white,
-            ),
-          ),
-
-          // ✅ Animated Wave - UPDATED FOR LARGE TABLETS
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.35,
-            left: 0,
-            right: 0,
-            child: AnimatedBuilder(
-              animation: _waveController,
-              builder: (context, child) {
-                return CustomPaint(
-                  size: Size(
-                    MediaQuery. of(context).size.width,
-                    isLargeTablet ? 600    // ✅ iPad Pro 12"+
-                        : isTablet ? 400   // Regular tablets
-                        : 250,             // Phones
-                  ),
-                  painter: WavePainter(
-                    animationValue: _waveController.value,
-                    isTablet: isTablet,
-                    isLargeTablet: isLargeTablet,  // ✅ Pass new flag
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Content (Logo, Text, Button)
-          SafeArea(
-            child: Column(
-              children: [
-                // Top section with logo and text
-                Expanded(
-                  child: Center(
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child:  ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: Column(
-                          mainAxisAlignment:  MainAxisAlignment.center,
-                          children: [
-                            // Logo/Icon with gradient
-                            Container(
-                              width: isTablet ? 160 : 140,
-                              height: isTablet ? 160 : 140,
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    AppColors.primary,
-                                    AppColors.primaryLight,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors. black.withOpacity(0.15),
-                                    blurRadius:  20,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: Image.asset(
-                                'lib/assets/images/paddologo.png',  // Now with transparent background
-                                fit: BoxFit.contain,  // Fits nicely with padding
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 24),
-                            
-                            // App Name
-                            Text(
-                              'Paddlme',
-                              style: TextStyle(
-                                fontFamily: 'GlacialIndifference', 
-                                fontSize: isTablet ? 52 : 42,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 8),
-                            
-                            // Tagline
-                            Text(
-                              'Share the Waves',
-                              style: TextStyle(
-                                fontFamily: 'GlacialIndifference', 
-                                fontSize: isTablet ? 20 : 16,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Bottom section with buttons
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 60 : 32,
-                      vertical: isTablet ? 60 : 40,
-                    ),
-                    child: Column(
-                      children: [
-                        // Tagline in white section
-                        Text(
-                          'Rent kayaks, SUP boards & more from Aotearoa locals',
-                          style: TextStyle(
-                            fontFamily: 'GlacialIndifference', 
-                            fontSize: isTablet ? 18 : 16,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        
-                        SizedBox(height: isTablet ? 32 : 24),
-                        
-                        // ✅ Get Started Button (Main CTA)
-                        ElevatedButton(
-                          onPressed: _navigateToOnboarding,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 4,
-                            shadowColor: AppColors.primary.withOpacity(0.4),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isTablet ? 60 : 40,
-                              vertical: 16,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Get Started',
-                                style: TextStyle(
-                                  fontFamily: 'GlacialIndifference', 
-                                  fontSize: isTablet ? 20 : 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 24,
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        SizedBox(height: isTablet ? 20 : 16),
-                        
-                        // ✅ Simple Text "Log In" Button
-                        TextButton(
-                          onPressed: _navigateToLogin,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 10,
-                            ),
-                          ),
-                          child: Text(
-                            'Already have an account? Log In',
-                            style: TextStyle(
-                              fontFamily: 'GlacialIndifference', 
-                              fontSize: isTablet ? 14 : 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ✅ NEW: Navigate directly to login
   void _navigateToLogin() async {
-    // Mark that user has seen onboarding (they're skipping it)
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenOnboarding', true);
 
@@ -337,18 +135,390 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  }
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    final isTablet = screenWidth > 600;
+    final isLargeTablet = screenWidth > 1000;
 
-// Custom Wave Painter - ✅ UPDATED FOR ALL SCREEN SIZES
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Blue Top Section with subtle animated gradient
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: screenHeight * (isTablet ? 0.35 : 0.4),
+            child: AnimatedBuilder(
+              animation: _breatheController,
+              builder: (context, child) {
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color.lerp(AppColors.primary, AppColors.primary.withBlue(220), 
+                          (_breatheAnimation.value - 1) * 0.3) ?? AppColors.primary,
+                        Color.lerp(AppColors.primaryLight, AppColors.primaryLight.withBlue(240), 
+                          (_breatheAnimation.value - 1) * 0.3) ?? AppColors.primaryLight,
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // White Bottom Section
+          Positioned(
+            top: screenHeight * (isTablet ? 0.65 : 0.6),
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              color: Colors.white,
+            ),
+          ),
+
+          // Dual Wave Layers for depth
+          Positioned(
+            top: screenHeight * 0.35,
+            left: 0,
+            right: 0,
+            child: Stack(
+              children: [
+                // Background wave (slower, softer)
+                AnimatedBuilder(
+                  animation: _waveController,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      size: Size(
+                        screenWidth,
+                        isLargeTablet ? 600 : isTablet ? 400 : 250,
+                      ),
+                      painter: WavePainter(
+                        animationValue: _waveController.value * 0.7,
+                        isTablet: isTablet,
+                        isLargeTablet: isLargeTablet,
+                        opacity: 0.5,
+                        waveHeight: isLargeTablet ? 45 : isTablet ? 30 : 18,
+                      ),
+                    );
+                  },
+                ),
+                // Foreground wave
+                AnimatedBuilder(
+                  animation: _waveController,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      size: Size(
+                        screenWidth,
+                        isLargeTablet ? 600 : isTablet ? 400 : 250,
+                      ),
+                      painter: WavePainter(
+                        animationValue: _waveController.value,
+                        isTablet: isTablet,
+                        isLargeTablet: isLargeTablet,
+                        opacity: 1.0,
+                        waveHeight: isLargeTablet ? 60 : isTablet ? 40 : 25,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Logo with breathing animation
+                            AnimatedBuilder(
+                              animation: _breatheAnimation,
+                              builder: (context, child) {
+                                return Transform.scale(
+                                  scale: _breatheAnimation.value,
+                                  child: Container(
+                                    width: isTablet ? 160 : 140,
+                                    height: isTablet ? 160 : 140,
+                                    padding: const EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          AppColors.primary,
+                                          AppColors.primaryLight,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(30),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.primary.withOpacity(0.3),
+                                          blurRadius: 30,
+                                          offset: const Offset(0, 15),
+                                          spreadRadius: -5,
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.3),
+                                          blurRadius: 20,
+                                          offset: const Offset(-5, -5),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Image.asset(
+                                      'lib/assets/images/paddologo.png',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            
+                            const SizedBox(height: 28),
+                            
+                            // App Name with letter spacing animation
+                            AnimatedBuilder(
+                              animation: _fadeController,
+                              builder: (context, child) {
+                                final spacing = Tween<double>(begin: 0.5, end: 1.2)
+                                    .animate(CurvedAnimation(
+                                      parent: _fadeController,
+                                      curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
+                                    ));
+                                return Text(
+                                  'Paddlme',
+                                  style: TextStyle(
+                                    fontFamily: 'GlacialIndifference',
+                                    fontSize: isTablet ? 52 : 42,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: spacing.value,
+                                  ),
+                                );
+                              },
+                            ),
+                            
+                            const SizedBox(height: 10),
+                            
+                            // Tagline with delayed fade
+                            FadeTransition(
+                              opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                                CurvedAnimation(
+                                  parent: _fadeController,
+                                  curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+                                ),
+                              ),
+                              child: Text(
+                                'Share the Waves',
+                                style: TextStyle(
+                                  fontFamily: 'GlacialIndifference',
+                                  fontSize: isTablet ? 20 : 16,
+                                  color: Colors.white.withOpacity(0.85),
+                                  fontWeight: FontWeight.w300,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom section with staggered fade
+                FadeTransition(
+                  opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                    CurvedAnimation(
+                      parent: _fadeController,
+                      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 60 : 32,
+                      vertical: isTablet ? 60 : 40,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Rent kayaks, SUP boards & more from Aotearoa locals',
+                          style: TextStyle(
+                            fontFamily: 'GlacialIndifference',
+                            fontSize: isTablet ? 18 : 16,
+                            color: const Color(0xFF6B7280),
+                            fontWeight: FontWeight.w400,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        
+                        SizedBox(height: isTablet ? 36 : 28),
+                        
+                        // Shimmer button
+                        GestureDetector(
+                          onTap: _navigateToOnboarding,
+                          child: AnimatedBuilder(
+                            animation: _shimmerAnimation,
+                            builder: (context, child) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.primary,
+                                      AppColors.primary.withBlue(200),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                      spreadRadius: -4,
+                                    ),
+                                  ],
+                                ),
+                                child: Stack(
+                                  children: [
+                                    // Shimmer overlay
+                                    Positioned.fill(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: AnimatedBuilder(
+                                          animation: _shimmerAnimation,
+                                          builder: (context, child) {
+                                            return FractionallySizedBox(
+                                              alignment: Alignment.centerLeft,
+                                              widthFactor: 0.3,
+                                              child: Transform.translate(
+                                                offset: Offset(
+                                                  _shimmerAnimation.value * 300,
+                                                  0,
+                                                ),
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        Colors.white.withOpacity(0),
+                                                        Colors.white.withOpacity(0.3),
+                                                        Colors.white.withOpacity(0),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    // Button content
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 60 : 40,
+                                        vertical: 16,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Get Started',
+                                            style: TextStyle(
+                                              fontFamily: 'GlacialIndifference',
+                                              fontSize: isTablet ? 20 : 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 24,
+                                            color: Colors.white,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        
+                        SizedBox(height: isTablet ? 20 : 16),
+                        
+                        // Refined text button with hover effect
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: _navigateToLogin,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Already have an account? Log In',
+                                style: TextStyle(
+                                  fontFamily: 'GlacialIndifference',
+                                  fontSize: isTablet ? 14 : 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary.withOpacity(0.8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Enhanced Wave Painter with opacity control
 class WavePainter extends CustomPainter {
   final double animationValue;
   final bool isTablet;
   final bool isLargeTablet;
+  final double opacity;
+  final double waveHeight;
 
   WavePainter({
     required this.animationValue,
     this.isTablet = false,
-    this.isLargeTablet = false,  // ✅ NEW
+    this.isLargeTablet = false,
+    this.opacity = 1.0,
+    this.waveHeight = 25.0,
   });
 
   @override
@@ -356,11 +526,11 @@ class WavePainter extends CustomPainter {
     final paint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
-        end: Alignment. bottomCenter,
+        end: Alignment.bottomCenter,
         colors: [
-          AppColors.primaryLight,
-          AppColors.primaryLight.withOpacity(0.7),
-          Colors.white.withOpacity(0.5),
+          AppColors.primaryLight.withOpacity(opacity),
+          AppColors.primaryLight.withOpacity(opacity * 0.7),
+          Colors.white.withOpacity(opacity * 0.5),
           Colors.white,
         ],
         stops: const [0.0, 0.25, 0.6, 1.0],
@@ -370,20 +540,8 @@ class WavePainter extends CustomPainter {
     final path = Path();
     path.moveTo(0, 0);
 
-    // ✅ RESPONSIVE WAVE PARAMETERS
-    final double waveHeight = isLargeTablet 
-        ? 60.0      // iPad Pro 12"+
-        : isTablet 
-            ? 40.0  // Regular tablets
-            : 25.0; // Phones
-    
-    final double waveFrequency = isLargeTablet 
-        ? 1.2       // Slower, smoother waves for big screens
-        : isTablet 
-            ? 1.5 
-            : 2.0;
+    final double waveFrequency = isLargeTablet ? 1.2 : isTablet ? 1.5 : 2.0;
 
-    // Draw wave
     for (double i = 0; i <= size.width; i++) {
       final double y = size.height * 0.3 +
           math.sin((i / size.width * waveFrequency * math.pi) + 
@@ -391,7 +549,6 @@ class WavePainter extends CustomPainter {
       path.lineTo(i, y);
     }
 
-    // Complete the path
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();
@@ -402,10 +559,7 @@ class WavePainter extends CustomPainter {
   @override
   bool shouldRepaint(WavePainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
-           oldDelegate.isTablet != isTablet ||
-           oldDelegate. isLargeTablet != isLargeTablet;  // ✅ NEW
+           oldDelegate.opacity != opacity ||
+           oldDelegate.waveHeight != waveHeight;
   }
 }
-
-
-  

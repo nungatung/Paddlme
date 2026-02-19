@@ -299,6 +299,8 @@ class EquipmentModel {
     return null;
   }
 
+  get images => null;
+
 
 
 }

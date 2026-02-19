@@ -10,15 +10,16 @@ import '../equipment/edit_equipment_screen.dart';
 import '../../services/favourites_service.dart';
 import '../../widgets/owner_profile_bottom_sheet.dart';
 import '../../services/equipment_service.dart';
-import '../messages/chat_screen.dart'; 
-import '../../services/messaging_service.dart'; 
+import '../messages/chat_screen.dart';
+import '../../services/messaging_service.dart';
 
 class EquipmentDetailScreen extends StatefulWidget {
   final EquipmentModel equipment;
 
   const EquipmentDetailScreen({
     super.key,
-    required this.equipment, required String equipmentId,
+    required this.equipment,
+    required String equipmentId,
   });
 
   @override
@@ -97,7 +98,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
 
   Future<void> _contactOwner() async {
     final user = _authService.currentUser;
-    
+
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -163,13 +164,14 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
             backgroundColor: Colors.red[400],
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             margin: const EdgeInsets.all(16),
           ),
         );
@@ -230,7 +232,7 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose(); 
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -249,10 +251,10 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
             controller: _scrollController,
             slivers: [
               SliverAppBar(
-                expandedHeight: isLargeTablet 
-                    ? screenHeight * 0.5 
-                    : isTablet 
-                        ? screenHeight * 0.45 
+                expandedHeight: isLargeTablet
+                    ? screenHeight * 0.5
+                    : isTablet
+                        ? screenHeight * 0.45
                         : screenHeight * 0.4,
                 pinned: true,
                 backgroundColor: Colors.white,
@@ -284,7 +286,6 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                         },
                       ),
                     ),
-
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: _buildFavoriteButton(),
@@ -293,15 +294,14 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   background: ImageCarousel(
                     imageUrls: widget.equipment.imageUrls,
-                    height: isLargeTablet 
-                        ? screenHeight * 0.5 
-                        : isTablet 
-                            ? screenHeight * 0.45 
+                    height: isLargeTablet
+                        ? screenHeight * 0.5
+                        : isTablet
+                            ? screenHeight * 0.45
                             : screenHeight * 0.4,
                   ),
                 ),
               ),
-
               SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,18 +312,19 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     const SizedBox(height: 8),
                     _buildDescriptionSection(),
                     const SizedBox(height: 8),
-                    if (widget.equipment.features.isNotEmpty) _buildFeaturesSection(),
+                    if (widget.equipment.features.isNotEmpty)
+                      _buildFeaturesSection(),
                     const SizedBox(height: 8),
                     _buildDeliverySection(),
                     const SizedBox(height: 8),
-                    if (widget.equipment.reviewCount > 0) _buildReviewsSection(),
+                    if (widget.equipment.reviewCount > 0)
+                      _buildReviewsSection(),
                     const SizedBox(height: 100),
                   ],
                 ),
               ),
             ],
           ),
-
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -337,7 +338,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required VoidCallback onPressed}) {
+  Widget _buildActionButton(
+      {required IconData icon, required VoidCallback onPressed}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -395,9 +397,13 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                 : AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
-                      _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      _isFavorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
                       key: ValueKey(_isFavorite),
-                      color: _isFavorite ? Colors.red[400] : const Color(0xFF1A1A2E),
+                      color: _isFavorite
+                          ? Colors.red[400]
+                          : const Color(0xFF1A1A2E),
                       size: 22,
                     ),
                   ),
@@ -443,17 +449,22 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
             content: Row(
               children: [
                 Icon(
-                  newStatus ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  newStatus
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
                   color: Colors.white,
                   size: 18,
                 ),
                 const SizedBox(width: 12),
-                Text(newStatus ? 'Added to favorites' : 'Removed from favorites'),
+                Text(newStatus
+                    ? 'Added to favorites'
+                    : 'Removed from favorites'),
               ],
             ),
             backgroundColor: newStatus ? Colors.red[400] : Colors.grey[700],
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             margin: const EdgeInsets.all(16),
             duration: const Duration(seconds: 2),
           ),
@@ -472,7 +483,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
             content: Text('Error: $e'),
             backgroundColor: Colors.red[400],
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             margin: const EdgeInsets.all(16),
           ),
         );
@@ -502,14 +514,16 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
             children: [
               if (widget.equipment.reviewCount > 0) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.accent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.star_rounded, size: 18, color: AppColors.accent),
+                      Icon(Icons.star_rounded,
+                          size: 18, color: AppColors.accent),
                       const SizedBox(width: 4),
                       Text(
                         '${widget.equipment.displayRating}',
@@ -533,14 +547,16 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                 const SizedBox(width: 12),
               ],
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.location_on_rounded, size: 16, color: AppColors.primary),
+                    Icon(Icons.location_on_rounded,
+                        size: 16, color: AppColors.primary),
                     const SizedBox(width: 6),
                     Text(
                       widget.equipment.location,
@@ -619,7 +635,6 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
               ),
             ],
           ),
-          
           if (!isOwner) ...[
             const SizedBox(height: 20),
             Row(
@@ -629,13 +644,16 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                     height: 48,
                     child: OutlinedButton.icon(
                       onPressed: _contactOwner,
-                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded,
+                          size: 18),
                       label: const Text(
                         'Message',
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                        side: BorderSide(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 1.5),
                         foregroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -664,7 +682,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                             ownerName: widget.equipment.ownerName,
                             ownerImageUrl: widget.equipment.ownerImageUrl,
                             location: widget.equipment.location,
-                            bio: 'Passionate about water sports and sharing amazing equipment with the community. I\'ve been renting out my gear for over 3 years!',
+                            bio:
+                                'Passionate about water sports and sharing amazing equipment with the community. I\'ve been renting out my gear for over 3 years!',
                             ownerListings: ownerListings,
                             ownerReviews: _getOwnerReviews(),
                             rating: 4.9,
@@ -838,7 +857,6 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
           if (widget.equipment.requiresPickup)
             _buildDeliveryOption(
               Icons.store_rounded,
@@ -846,25 +864,26 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
               'Collect from ${widget.equipment.location}',
               AppColors.primary,
             ),
-
-          if (widget.equipment.requiresPickup && widget.equipment.offersDelivery)
+          if (widget.equipment.requiresPickup &&
+              widget.equipment.offersDelivery)
             const SizedBox(height: 12),
-
           if (widget.equipment.offersDelivery)
             _buildDeliveryOption(
               Icons.local_shipping_rounded,
               'Delivery Available',
-              widget.equipment.deliveryFeeText ?? 'Contact owner for delivery details',
+              widget.equipment.deliveryFeeText ??
+                  'Contact owner for delivery details',
               Colors.green[600]!,
             ),
-
-          if (widget.equipment.offersDelivery && widget.equipment.deliveryRadius != null) ...[
+          if (widget.equipment.offersDelivery &&
+              widget.equipment.deliveryRadius != null) ...[
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(left: 48),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, size: 16, color: Colors.grey[500]),
+                  Icon(Icons.info_outline_rounded,
+                      size: 16, color: Colors.grey[500]),
                   const SizedBox(width: 8),
                   Text(
                     'Within ${widget.equipment.deliveryRadius!.toStringAsFixed(0)}km radius',
@@ -883,7 +902,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
     );
   }
 
-  Widget _buildDeliveryOption(IconData icon, String title, String subtitle, Color color) {
+  Widget _buildDeliveryOption(
+      IconData icon, String title, String subtitle, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -962,7 +982,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                       color: AppColors.accent.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.star_rounded, size: 24, color: AppColors.accent),
+                    child: Icon(Icons.star_rounded,
+                        size: 24, color: AppColors.accent),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -979,7 +1000,8 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
                 onPressed: () {},
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 child: const Text(
                   'See all',
@@ -998,9 +1020,9 @@ class _EquipmentDetailScreenState extends State<EquipmentDetailScreen> {
   Widget _buildBottomBar(bool isTablet) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        isTablet ? 28 : 20, 
-        16, 
-        isTablet ? 28 : 20, 
+        isTablet ? 28 : 20,
+        16,
+        isTablet ? 28 : 20,
         20,
       ),
       decoration: BoxDecoration(

@@ -775,57 +775,58 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-
-              // Equipment Grid
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadEquipment,
-                  color: AppColors.primary,
-                  backgroundColor: Colors.white,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _filteredEquipment.isEmpty
-                          ? _buildEmptyState()
-                          : GridView.builder(
-                              padding: const EdgeInsets.only(
-                                left: 16,
-                                right: 16,
-                                top: 8,
-                                bottom: 100,
-                              ),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                childAspectRatio: 0.72,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                              ),
-                              itemCount: _filteredEquipment.length,
-                              itemBuilder: (context, index) {
-                                return EquipmentCard(
-                                  equipment: _filteredEquipment[index],
-                                  onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => EquipmentDetailScreen(
-                                          equipment: _filteredEquipment[index], 
-                                          equipmentId: '',
-                                        ),
-                                      ),
-                                    );
-                                    _loadEquipment();
-                                  },
+          // Equipment Grid
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadEquipment,
+              color: AppColors.primary,
+              backgroundColor: Colors.white,
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredEquipment.isEmpty
+                      ? _buildEmptyState()
+                      : GridView.builder(
+                          padding: const EdgeInsets.only(
+                            left: 16,
+                            right: 16,
+                            top: 8,
+                            bottom: 100,
+                          ),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            childAspectRatio: 0.72,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                          itemCount: _filteredEquipment.length,
+                          itemBuilder: (context, index) {
+                            return EquipmentCard(
+                              equipment: _filteredEquipment[index],
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EquipmentDetailScreen(
+                                      equipment: _filteredEquipment[index], 
+                                      equipmentId: '',
+                                    ),
+                                  ),
                                 );
+                                _loadEquipment();
                               },
-                            ),
+                            );
+                          },
+                        ),
                 ),
               ),
             ],
+              ),
           ),
         ),
-      ),
     );
   }
+
+  
 
   Widget _buildEmptyState() {
     final isFiltered = _currentFilters.hasActiveFilters || 

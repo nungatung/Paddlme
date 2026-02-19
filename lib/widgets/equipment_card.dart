@@ -10,7 +10,7 @@ class EquipmentCard extends StatefulWidget {
 
   const EquipmentCard({
     super.key,
-    required this. equipment,
+    required this.equipment,
     required this.onTap,
   });
 
@@ -70,7 +70,6 @@ class _EquipmentCardState extends State<EquipmentCard> {
       return;
     }
 
-    // Optimistic update
     final previousState = _isFavorite;
     setState(() {
       _isFavorite = !_isFavorite;
@@ -88,10 +87,9 @@ class _EquipmentCardState extends State<EquipmentCard> {
           _isFavorite = newState;
         });
 
-        // ✅ Show feedback
-        ScaffoldMessenger. of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:  Text(
+            content: Text(
               newState 
                   ? '❤️ Added to favorites' 
                   : 'Removed from favorites',
@@ -104,7 +102,6 @@ class _EquipmentCardState extends State<EquipmentCard> {
     } catch (e) {
       debugPrint('❌ Error toggling favorite: $e');
       
-      // Revert on error
       if (mounted) {
         setState(() {
           _isFavorite = previousState;
@@ -112,7 +109,7 @@ class _EquipmentCardState extends State<EquipmentCard> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error:  $e'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -124,16 +121,17 @@ class _EquipmentCardState extends State<EquipmentCard> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: widget.onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow:  [
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
             BoxShadow(
-              color: Colors.black. withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+              spreadRadius: 0,
             ),
           ],
         ),
@@ -141,18 +139,18 @@ class _EquipmentCardState extends State<EquipmentCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Image with fixed aspect ratio
+            // Image section - takes more space (62% of card)
             Flexible(
-              flex: 5,
+              flex: 62,
               child: Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                     child: AspectRatio(
-                      aspectRatio: 1.5,
+                      aspectRatio: 1.3, // Reduced from 1.5 - taller image
                       child: widget.equipment.imageUrls.isNotEmpty
                           ? Image.network(
-                              widget.equipment.imageUrls. first,
+                              widget.equipment.imageUrls.first,
                               width: double.infinity,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
@@ -163,35 +161,36 @@ class _EquipmentCardState extends State<EquipmentCard> {
                     ),
                   ),
 
-                  // ✅ NEW:  Favorite button overlay
+                  // Favorite button overlay
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 10,
+                    right: 10,
                     child: GestureDetector(
                       onTap: _toggleFavorite,
                       child: Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white. withOpacity(0.9),
+                          color: Colors.white.withOpacity(0.95),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: _isLoadingFavorite
                             ? const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: 20,
+                                height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),
                               )
                             : Icon(
                                 _isFavorite ? Icons.favorite : Icons.favorite_border,
-                                size: 18,
+                                size: 20,
                                 color: _isFavorite ? Colors.red : Colors.grey[600],
                               ),
                       ),
@@ -201,39 +200,43 @@ class _EquipmentCardState extends State<EquipmentCard> {
               ),
             ),
 
-            // Details section (keep your existing code)
+            // Details section - compressed (38% of card)
             Flexible(
-              flex: 5,
-              child:  Padding(
-                padding: const EdgeInsets.all(10),
+              flex: 38,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Column(
-                  crossAxisAlignment:  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Title
+                    // Title - larger and bolder
                     Text(
                       widget.equipment.title,
                       style: const TextStyle(
-                        fontSize:  14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 16, // Increased from 14
+                        fontWeight: FontWeight.w700, // Bolder
+                        color: Colors.black87,
                         height: 1.2,
+                        letterSpacing: -0.2,
                       ),
-                      maxLines: 2,
+                      maxLines: 1, // Reduced to 1 line
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
 
-                    // Location
+                    // Location - improved readability
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 12, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
+                        Icon(Icons.location_on, size: 13, color: Colors.grey[500]),
+                        const SizedBox(width: 3),
                         Expanded(
                           child: Text(
-                            widget.equipment. location,
+                            widget.equipment.location,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 13, // Increased from 12
                               color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -256,49 +259,62 @@ class _EquipmentCardState extends State<EquipmentCard> {
                               const Icon(Icons.star, size: 14, color: AppColors.accent),
                               const SizedBox(width: 4),
                               Text(
-                                '${widget.equipment.rating. toStringAsFixed(1)} (${widget.equipment.reviewCount})',
+                                '${widget.equipment.rating.toStringAsFixed(1)}',
                                 style: const TextStyle(
+                                  fontSize: 14, // Increased
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              Text(
+                                ' (${widget.equipment.reviewCount})',
+                                style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           )
                         else
-                          const SizedBox. shrink(),
+                          const SizedBox.shrink(),
 
-                        // Price
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            const Text(
-                              'NZ\$',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight. bold,
-                                color: AppColors.primary,
-                                height: 1.0,
+                          const Spacer(),
+
+                        // Add this SizedBox to push price down
+                        const SizedBox(height: 8),
+
+                        // Price - prominent pill badge
+                        Container(                
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                'NZ\$${widget.equipment.pricePerHour.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 17, // Increased from 18
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                  height: 1,
+                                ),
                               ),
-                            ),
-                            Text(
-                              widget.equipment. pricePerHour.toStringAsFixed(0),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                                height: 1.0,
+                              Text(
+                                '/hr',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary.withOpacity(0.7),
+                                  height: 1,
+                                ),
                               ),
-                            ),
-                            Text(
-                              '/hr',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors. grey[600],
-                                height: 1.0,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
